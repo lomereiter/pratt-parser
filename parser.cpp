@@ -96,8 +96,10 @@ class Grammar {
         Symbol<T>& brackets(std::string ob, std::string cb, int binding_power) {
             Symbol<T>& open_sym = add_symbol_to_dict(ob, binding_power);
             Symbol<T>& close_sym = add_symbol_to_dict(cb, 0);
-            open_sym.nud = [](PrattParser<T>& p) -> T {
-                        return p.parse(0);
+            open_sym.nud = [cb](PrattParser<T>& p) -> T {
+                        T val = p.parse(0);
+                        p.advance(cb);
+                        return val;
             };
             return open_sym;
         }
@@ -140,7 +142,13 @@ class PrattParser {
             }
             return left;
         }
-
+        
+        void advance(const std::string& s) {
+            if (token.id() != s) {
+                throw "unexpected character"; /* FIXME! */
+            }
+            token = next();
+        }
 };
 
 template <typename T>
@@ -158,15 +166,17 @@ class Symbol {
 
 template <typename T>
 class Token {
+        std::string* id_ptr;
     public: /* TODO: change visibility */
-        std::string id;
         int lbp;
         std::function<T(PrattParser<T>&)> null_denotation;
         std::function<T(PrattParser<T>&, T)> left_denotation;
         std::shared_ptr<T> value_ptr;
         Token(Symbol<T>& sym, std::shared_ptr<T> val_p=nullptr) :
-            id(sym.id), lbp(sym.lbp), null_denotation(sym.nud), 
+            id_ptr(&sym.id), lbp(sym.lbp), null_denotation(sym.nud), 
             left_denotation(sym.led), value_ptr(val_p) {}
+
+        const std::string& id() { return *id_ptr; }
 
         T nud(PrattParser<T>& parser) {
             if (!null_denotation) {
@@ -214,19 +224,19 @@ class Token {
                     return Token<T>(symbols[END_SYMBOL_NAME]);
                 }
                 smatch token_match = *curr;
-                if ((*curr)[1].matched) { /* literal */
+                if (token_match[1].matched) { /* literal */
                     std::stringstream ss;
-                    ss << (*curr)[1].str();
+                    ss << token_match.str(1);
                     std::shared_ptr<T> value_ptr = std::make_shared<T>();
                     ss >> *value_ptr;
                     return Token<T>(symbols[LITERAL_SYMBOL_NAME], value_ptr);
                 } else {
-                    std::string symbol_id = (*curr)[2].str();
+                    std::string symbol_id = token_match.str(2);
                     auto it = symbols.find(symbol_id);
                     if (it != symbols.end()) {
                         return Token<T>(it -> second);
                     } else {
-                        throw curr -> position(); /* TODO: throw smth. better */
+                        throw token_match.position(); /* TODO: throw smth. better */
                     }
                 }
             }
