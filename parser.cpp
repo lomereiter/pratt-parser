@@ -25,6 +25,7 @@ template <typename T>
 struct SymbolDict {
     typedef std::map<std::string, Symbol<T>> type;
     typedef typename type::iterator iterator;
+    typedef typename type::const_iterator const_iterator;
 };
 
 const std::string LITERAL_SYMBOL_NAME = "(literal)";
@@ -32,10 +33,12 @@ const std::string END_SYMBOL_NAME = "(end)";
 
 template <typename T>
 class Grammar {
+    enum Error { NO_CLOSING_BRACKET };
     public:
         typename SymbolDict<T>::type symbols;
+        regex token_re;
 
-        Grammar() {
+        Grammar(std::string token_pat) : token_re(token_pat) {
             add_symbol_to_dict(LITERAL_SYMBOL_NAME, 0);
             add_symbol_to_dict(END_SYMBOL_NAME, std::numeric_limits<int>::min());
         }
@@ -75,7 +78,7 @@ class Grammar {
         Symbol<T>& infix(std::string op, int binding_power,
                 std::function<T(T, T)> selector) {
             Symbol<T>& sym = add_symbol_to_dict(op, binding_power);
-            sym.led = [selector, binding_power](PrattParser<T>&p, T left) -> T {
+            sym.led = [selector, binding_power](PrattParser<T>& p, T left) -> T {
                         return selector(left, p.parse(binding_power));
             };
             return sym;
@@ -84,15 +87,23 @@ class Grammar {
         Symbol<T>& infix_r(std::string op, int binding_power,
                 std::function<T(T, T)> selector) {
             Symbol<T>& sym = add_symbol_to_dict(op, binding_power);
-            sym.led = [selector, binding_power](PrattParser<T>&p, T left) -> T {
+            sym.led = [selector, binding_power](PrattParser<T>& p, T left) -> T {
                         return selector(left, p.parse(binding_power - 1));
             };
             return sym;
         }
+
+        Symbol<T>& brackets(std::string ob, std::string cb, int binding_power) {
+            Symbol<T>& open_sym = add_symbol_to_dict(ob, binding_power);
+            Symbol<T>& close_sym = add_symbol_to_dict(cb, 0);
+            open_sym.nud = [](PrattParser<T>& p) -> T {
+                        return p.parse(0);
+            };
+            return open_sym;
+        }
         
         T parse(std::string& text) {
-            PrattParser<T> pp(text, symbols);
-            return pp.parse();
+            return PrattParser<T>(text, symbols, token_re).parse();
         }
 
         T parse(const char* text) {
@@ -103,12 +114,13 @@ class Grammar {
 
 template <typename T>
 class PrattParser {
-        typename SymbolDict<T>::type symbols;
         typename Token<T>::iterator curr, end;
         Token<T> token;
+ 
     public:
-        PrattParser(std::string& str, typename SymbolDict<T>::type& symbols) : 
-            symbols(symbols), curr(str, symbols), token(next()) {
+        PrattParser(std::string& str, typename SymbolDict<T>::type& symbols,
+                    const regex& token_regex) :
+             curr(str, symbols, token_regex), token(next())  {
         }
         
         Token<T> next() {
@@ -128,6 +140,7 @@ class PrattParser {
             }
             return left;
         }
+
 };
 
 template <typename T>
@@ -140,7 +153,7 @@ class Symbol {
         std::function<T(PrattParser<T>&)> nud;
         std::function<T(PrattParser<T>&, T)> led;
 
-        Symbol(std::string id="", int lbp = 0) : id(id), lbp(lbp) {}
+        Symbol(std::string id="", int lbp=0) : id(id), lbp(lbp) {}
 };
 
 template <typename T>
@@ -177,7 +190,6 @@ class Token {
 
         /* Token<T>::iterator class */
         class iterator {
-            regex token_pattern;
             sregex_iterator curr;
             sregex_iterator end;
             typename SymbolDict<T>::type& symbols;
@@ -185,9 +197,9 @@ class Token {
 
             iterator() : symbols(*static_cast<typename SymbolDict<T>::type*>(0)) {}
 
-            iterator(std::string& s, typename SymbolDict<T>::type& symbols) :
-                token_pattern("\\s*(?:(\\d+)|(\\+|\\*|-|/))"),
-                curr(s.begin(), s.end(), token_pattern),
+            iterator(std::string& s, typename SymbolDict<T>::type& symbols,
+                     const regex& token_re) :
+                curr(s.begin(), s.end(), token_re),
                 symbols(symbols) {
             }
 
@@ -202,38 +214,56 @@ class Token {
                     return Token<T>(symbols[END_SYMBOL_NAME]);
                 }
                 smatch token_match = *curr;
-                if ((*curr)[1].matched) { /* number */
+                if ((*curr)[1].matched) { /* literal */
                     std::stringstream ss;
                     ss << (*curr)[1].str();
                     std::shared_ptr<T> value_ptr = std::make_shared<T>();
                     ss >> *value_ptr;
                     return Token<T>(symbols[LITERAL_SYMBOL_NAME], value_ptr);
                 } else {
-                    return Token<T>(symbols[(*curr)[2].str()]);
+                    std::string symbol_id = (*curr)[2].str();
+                    auto it = symbols.find(symbol_id);
+                    if (it != symbols.end()) {
+                        return Token<T>(it -> second);
+                    } else {
+                        throw curr -> position(); /* TODO: throw smth. better */
+                    }
                 }
             }
         };
 };
 
-class Calculator : public Grammar<int> {
-        static int add(int lhs, int rhs) { return lhs + rhs; }
-        static int sub(int lhs, int rhs) { return lhs - rhs; }
-        static int mul(int lhs, int rhs) { return lhs * rhs; }
-        static int div(int lhs, int rhs) { return lhs / rhs; }
-        static int neg(int lhs) { return -lhs; }
-        static int pos(int lhs) { return lhs; }
+template <typename T>
+class Calculator : public Grammar<T> {
+        static T add(T lhs, T rhs) { return lhs + rhs; }
+        static T sub(T lhs, T rhs) { return lhs - rhs; }
+        static T mul(T lhs, T rhs) { return lhs * rhs; }
+        static T div(T lhs, T rhs) { return lhs / rhs; }
+        static T neg(T lhs) { return -lhs; }
+        static T pos(T lhs) { return lhs; }
+        static T fac(T lhs) { 
+            T v = 1; 
+            for (int i = 1; i <= lhs; ++i)
+                v *= i;
+            return v;
+        }
     public:
-        Calculator() {
+        Calculator(std::string token_pattern) : Grammar<T>(token_pattern) {
             infix("+", 10, add); infix("-", 10, sub);
             infix("*", 20, mul); infix("/", 20, div);
             prefix("+", 100, pos); prefix("-", 100, neg);
+            postfix("!", 110, fac);
+            Grammar<T>::brackets("(",")", std::numeric_limits<int>::max());
         }
 };
 
 int main() {
-    Calculator calc;
+    std::string number_pat = "(?:\\d+(?:\\.\\d*)?)|\\.\\d+";
+    std::string operator_pat = "\\*\\*|.";
+
+    Calculator<double> calc("\\s*(?:(" + number_pat + ")|(" + operator_pat + "))");
     std::string str;
-    std::cout << "Enter expression: (+, -, *, / are supported)" << std::endl;
+    std::cout << "Enter expression:" << std::endl;
     std::getline(std::cin, str);
     std::cout << calc.parse(str) << std::endl;
     return 0;
