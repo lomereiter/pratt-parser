@@ -8,12 +8,9 @@
 #include <functional>
 #include <limits>
 #include <sstream>
+#include <memory>
 
-#include <boost/regex.hpp>
-using boost::regex;
-using boost::sregex_iterator;
-using boost::smatch;
-
+#include <locale>
 /* TODO: divide the code into several headers */
 
 template <typename T> class Grammar;
@@ -28,19 +25,18 @@ struct SymbolDict {
     typedef typename type::const_iterator const_iterator;
 };
 
-const std::string LITERAL_SYMBOL_NAME = "(literal)";
-const std::string END_SYMBOL_NAME = "(end)";
+
+std::string END_SYMBOL_NAME = "(end)";
 
 template <typename T>
 class Grammar {
-    enum Error { NO_CLOSING_BRACKET };
+    enum ErrorKind { NO_CLOSING_BRACKET };
     public:
         typename SymbolDict<T>::type symbols;
-        regex token_re;
 
-        Grammar(std::string token_pat) : token_re(token_pat) {
-            add_symbol_to_dict(LITERAL_SYMBOL_NAME, 0);
-            add_symbol_to_dict(END_SYMBOL_NAME, std::numeric_limits<int>::min());
+        Grammar() {
+            add_symbol_to_dict(END_SYMBOL_NAME, std::numeric_limits<int>::min())\
+                .set_scanner([](const std::string& s, size_t pos){ return pos; });
         }
 
         Symbol<T>& add_symbol_to_dict(std::string sym, int lbp=0) {
@@ -58,7 +54,7 @@ class Grammar {
 
         Symbol<T>& prefix(std::string op, int binding_power, 
                 std::function<T(T)> selector) {
-            Symbol<T>& sym = add_symbol_to_dict(op); /* no left denotation => no lbp */
+            Symbol<T>& sym = add_symbol_to_dict(op); 
             sym.nud = [selector, binding_power](PrattParser<T>& p) -> T {
                         return selector(p.parse(binding_power));
             };
@@ -104,11 +100,11 @@ class Grammar {
             return open_sym;
         }
         
-        T parse(std::string& text) {
-            return PrattParser<T>(text, symbols, token_re).parse();
+        T parse(const std::string& text) const {
+            return PrattParser<T>(text, symbols).parse();
         }
 
-        T parse(const char* text) {
+        T parse(const char* text) const {
             std::string str(text);
             return parse(str);
         }
@@ -116,13 +112,13 @@ class Grammar {
 
 template <typename T>
 class PrattParser {
-        typename Token<T>::iterator curr, end;
+        typename Token<T>::iterator curr;
         Token<T> token;
  
     public:
-        PrattParser(std::string& str, typename SymbolDict<T>::type& symbols,
-                    const regex& token_regex) :
-             curr(str, symbols, token_regex), token(next())  {
+        PrattParser(const std::string& str, 
+                    const typename SymbolDict<T>::type& symbols) :
+             curr(str, symbols), token(next())  {
         }
         
         Token<T> next() {
@@ -155,30 +151,67 @@ template <typename T>
 class Symbol {
     /* Basic class containing identifier of symbol,
        its binding power, led and nud */
+
+        typedef std::function<size_t(const std::string& str, size_t pos)> ScannerType;
+        typedef std::function<T(const std::string& str, size_t beg, size_t end)> ParserType;
+
+        ScannerType scanner;
+        ParserType parser;
     public:
         std::string id;
         int lbp;
         std::function<T(PrattParser<T>&)> nud;
         std::function<T(PrattParser<T>&, T)> led;
 
-        Symbol(std::string id="", int lbp=0) : id(id), lbp(lbp) {}
+        Symbol(std::string id=std::string(), int lbp=0) : id(id), lbp(lbp) {}
+
+        size_t scan(const std::string& str, size_t pos) const {
+            if (scanner) {
+                return scanner(str, pos);
+            } else {
+                size_t len = id.length();
+                for (size_t i = 0; i < len; ++i) {
+                    if (i + pos >= str.length() || id[i] != str[i + pos])
+                        return pos;
+                }
+                return pos + len;
+            }
+        }
+
+        T parse(const std::string& str, size_t beg, size_t end) const {
+            if (parser) {
+                return parser(str, beg, end);
+            } else {
+                return T();
+            }
+        }
+
+        Symbol& set_scanner(const ScannerType& s) {
+            scanner = s;
+            return *this;
+        }
+
+        Symbol& set_parser(const ParserType& p) {
+            parser = p;
+            return *this;
+        }
 };
 
 template <typename T>
 class Token {
-        std::string* id_ptr;
+        const std::string* id_ptr;
     public: /* TODO: change visibility */
         int lbp;
         std::function<T(PrattParser<T>&)> null_denotation;
         std::function<T(PrattParser<T>&, T)> left_denotation;
         std::shared_ptr<T> value_ptr;
-        Token(Symbol<T>& sym, std::shared_ptr<T> val_p=nullptr) :
+        Token(const Symbol<T>& sym, std::shared_ptr<T> val_p=nullptr) :
             id_ptr(&sym.id), lbp(sym.lbp), null_denotation(sym.nud), 
             left_denotation(sym.led), value_ptr(val_p) {}
 
         const std::string& id() { return *id_ptr; }
 
-        T nud(PrattParser<T>& parser) {
+        T nud(PrattParser<T>& parser) const {
             if (!null_denotation) {
                 if (value_ptr) { /* literal token */
                     return *value_ptr;
@@ -190,7 +223,7 @@ class Token {
             return null_denotation(parser);
         }
 
-        T led(PrattParser<T>& parser, T left) {
+        T led(PrattParser<T>& parser, T left) const {
             if (!left_denotation) {
                 /* TODO: throw meaningful exception */
                 throw "no led!";
@@ -200,49 +233,59 @@ class Token {
 
         /* Token<T>::iterator class */
         class iterator {
-            sregex_iterator curr;
-            sregex_iterator end;
-            typename SymbolDict<T>::type& symbols;
+            const typename SymbolDict<T>::type& symbols;
+            const std::string& str;
+            size_t start, end;
+            const Symbol<T>* match;
+
+            bool is_white_space(char c) {
+                std::locale loc;
+                return std::isspace(c, loc);
+            }
+
             public:
-
-            iterator() : symbols(*static_cast<typename SymbolDict<T>::type*>(0)) {}
-
-            iterator(std::string& s, typename SymbolDict<T>::type& symbols,
-                     const regex& token_re) :
-                curr(s.begin(), s.end(), token_re),
-                symbols(symbols) {
+            iterator(const std::string& s, 
+                     const typename SymbolDict<T>::type& symbols) :
+                str(s), symbols(symbols), start(0), end(0) {
+                    operator++();
             }
 
             iterator& operator++() {
-                if (curr != end)
-                    ++curr;
+                while (start < str.length() &&
+                       is_white_space(str[start]))
+                    ++start;
+
+                if (start < str.length()) {
+                    end = start;
+                    match = nullptr;
+                    for (const auto& kv : symbols) {
+                        const Symbol<T>& sym = kv.second;
+                        size_t p = sym.scan(str, start);
+                        if (p > end) {
+                            match = &sym;
+                            end = p;
+                        }
+                    }
+                    if (end == start) {
+                        throw "Invalid symbol"; /* FIXME */
+                    }
+                }
                 return *this;
             }
 
             Token<T> operator*() {
-                if (curr == end) {
-                    return Token<T>(symbols[END_SYMBOL_NAME]);
+                if (start >= str.length()) {
+                    return Token<T>(symbols.find(END_SYMBOL_NAME)->second);
                 }
-                smatch token_match = *curr;
-                if (token_match[1].matched) { /* literal */
-                    std::stringstream ss;
-                    ss << token_match.str(1);
-                    std::shared_ptr<T> value_ptr = std::make_shared<T>();
-                    ss >> *value_ptr;
-                    return Token<T>(symbols[LITERAL_SYMBOL_NAME], value_ptr);
-                } else {
-                    std::string symbol_id = token_match.str(2);
-                    auto it = symbols.find(symbol_id);
-                    if (it != symbols.end()) {
-                        return Token<T>(it -> second);
-                    } else {
-                        throw token_match.position(); /* TODO: throw smth. better */
-                    }
-                }
+                Token<T> token(*match, std::make_shared<T>(match->parse(str, start, end)));
+                start = end;
+                return token;
             }
         };
 };
 
+
+#include <cctype>
 template <typename T>
 class Calculator : public Grammar<T> {
         static T add(T lhs, T rhs) { return lhs + rhs; }
@@ -258,7 +301,22 @@ class Calculator : public Grammar<T> {
             return v;
         }
     public:
-        Calculator(std::string token_pattern) : Grammar<T>(token_pattern) {
+        Calculator() {
+            Grammar<T>::add_symbol_to_dict("(number)", 0)\
+            .set_scanner(
+            [](const std::string& str, size_t pos) -> size_t {
+                int i = pos;
+                while(i < str.length() && isdigit(str[i]))
+                    ++i;
+                return i;
+            })\
+            .set_parser(
+            [](const std::string& str, size_t beg, size_t end) -> T {
+                T num = 0;
+                for (int i = beg; i != end; ++i)
+                    num *= 10, num += str[i] - '0';
+                return num;
+            });
             infix("+", 10, add); infix("-", 10, sub);
             infix("*", 20, mul); infix("/", 20, div);
             prefix("+", 100, pos); prefix("-", 100, neg);
@@ -268,10 +326,8 @@ class Calculator : public Grammar<T> {
 };
 
 int main() {
-    std::string number_pat = "(?:\\d+(?:\\.\\d*)?)|\\.\\d+";
-    std::string operator_pat = "\\*\\*|.";
 
-    Calculator<double> calc("\\s*(?:(" + number_pat + ")|(" + operator_pat + "))");
+    Calculator<double> calc;
     std::string str;
     std::cout << "Enter expression:" << std::endl;
     std::getline(std::cin, str);
