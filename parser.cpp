@@ -186,6 +186,9 @@ class Symbol {
             }
         }
 
+        bool has_scanner() const { return !!scanner; }
+        bool has_parser() const { return !!parser; }
+
         Symbol& set_scanner(const ScannerType& s) {
             scanner = s;
             return *this;
@@ -277,7 +280,10 @@ class Token {
                 if (start >= str.length()) {
                     return Token<T>(symbols.find(END_SYMBOL_NAME)->second);
                 }
-                Token<T> token(*match, std::make_shared<T>(match->parse(str, start, end)));
+                Token<T> token(*match, 
+                        match -> has_parser() ? 
+                            std::make_shared<T>(match->parse(str, start, end)) :
+                            nullptr);
                 start = end;
                 return token;
             }
