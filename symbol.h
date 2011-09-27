@@ -1,10 +1,10 @@
 #ifndef SYMBOL_H
 #define SYMBOL_H
 
+#include "forward.h"
+
 #include <functional>
 #include <string>
-
-template <typename T> class PrattParser;
 
 template <typename T>
 class Symbol {
@@ -65,6 +65,6 @@ struct SymbolDict {
     typedef typename type::const_iterator const_iterator;
 };
 
-#include <string>
-const std::string END_SYMBOL_NAME("(end)");
+const char END_SYMBOL_NAME[] = "(end)";
+
 #endif

@@ -1,17 +1,12 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
-#include "parser_core.h"
-#include "symbol.h"
+#include "forward.h"
+
 #include <string>
 #include <functional>
 #include <memory>
 #include <locale>
-
-template <typename T> class PrattParser;
-template <typename T> class Symbol;
-template <typename T> struct SymbolDict;
-extern const std::string END_SYMBOL_NAME;
 
 template <typename T>
 class Token {

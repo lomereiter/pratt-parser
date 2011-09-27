@@ -1,11 +1,9 @@
 #ifndef PARSER_CORE_H
 #define PARSER_CORE_H
 
-#include <string>
+#include "forward.h"
 
-template <typename T> class Token;
-template <typename T> class Symbol;
-template <typename T> struct SymbolDict;
+#include <string>
 
 template <typename T>
 class PrattParser {

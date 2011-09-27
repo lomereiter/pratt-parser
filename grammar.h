@@ -1,8 +1,7 @@
 #ifndef GRAMMAR_H
 #define GRAMMAR_H
 
-#include "parser_core.h"
-#include "symbol.h"
+#include "forward.h"
 
 #include <string>
 #include <functional>
@@ -16,7 +15,8 @@ class Grammar {
         typename SymbolDict<T>::type symbols;
 
         Grammar() {
-            add_symbol_to_dict(END_SYMBOL_NAME, std::numeric_limits<int>::min())\
+            add_symbol_to_dict(std::string(END_SYMBOL_NAME), 
+                               std::numeric_limits<int>::min())
                 .set_scanner([](const std::string& s, size_t pos){ return pos; });
         }
 
