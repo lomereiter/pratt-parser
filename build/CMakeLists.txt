@@ -1,18 +1,25 @@
 cmake_minimum_required (VERSION 2.6)
-set (PROJECT calculator)
+set (PROJECT pascal_parser)
 
 project (${PROJECT})
 
 set (HEADERS
-        ../symbol.h
-        ../token.h
-        ../grammar.h
-        ../parser_core.h
-        ../parser.h
+        ../parser/symbol.h
+        ../parser/token.h
+        ../parser/grammar.h
+        ../parser/parser_core.h
+        ../parser/parser.h
+        ../pascal/operator.h
+        ../pascal/syntax_error.h
+        ../pascal/ast_visitors.h
+        ../pascal/expression.h
+        ../pascal/visitor.h
+        ../pascal/node_tags.h
+        ../pascal/node_traits.h
         )
 
 set (SOURCES
-        ../calculator.cpp
+        ../pascal/pascal_ast.cpp
         )
 
 set (CMAKE_CXX_COMPILER
@@ -20,7 +27,7 @@ set (CMAKE_CXX_COMPILER
         )
 
 set (CMAKE_CXX_FLAGS
-        -std=c++0x
+        -std=c++0x 
         )
 
 set (CMAKE_CXX_FLAGS_DEBUG
