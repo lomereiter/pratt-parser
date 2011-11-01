@@ -4,6 +4,10 @@
 #include <memory>
 #include <forward_list>
 
+#ifdef DEBUG
+#include "debug.h"
+#endif 
+
 #include "syntax_error.h"
 #include "node_traits.h"
 #include "visitor.h"
@@ -15,7 +19,7 @@ template <typename T, int> struct ConvertHelper;
 
 template <typename T>
 struct ConvertHelper<T, 0> {
-    bool operator() (std::shared_ptr<Node>&) { return true; }
+    bool operator() (const std::shared_ptr<Node>&) { return true; }
 };
 
 template <typename T>
@@ -39,32 +43,42 @@ template <typename _Type,
 struct ListVisitor : public AstThrowVisitor {
     using AstThrowVisitor::visit;
     /* for right-associative operators */
-    ListVisitor(std::shared_ptr<Node> left,
-                std::shared_ptr<Node> right) : visited_right(false) {
+    /* references are non-const because conversion might be performed */
+    ListVisitor(std::shared_ptr<Node>& left,
+                std::shared_ptr<Node>& right) : visited_right(false) {
 
-        Visits<ListVisitor<_Type, try_to_convert, _ListType>, _Type, _ListType>(*this);
+        Visits<ListVisitor<_Type, try_to_convert, _ListType>, _Type, _ListType>();
 
-        check_type(right);
-        check_type(left);
+        check_type<_ListType>(right);
+        check_type<_Type>(left);
 
         travel(right);
         travel(left);
     }
 
-    void visit(std::shared_ptr<_Type>& id) {
+    void visit(const std::shared_ptr<_Type>& id) {
         if (!visited_right) {
+#ifdef DEBUG
+            std::cout << "visited node on the right" << std::endl;
+#endif
             visited_right = true;
             ids.push_front(id);
         } else {
+#ifdef DEBUG
+            std::cout << "visited node on the left" << std::endl;
+#endif
             ids.push_front(id);
             expr = std::make_shared<_ListType>(std::move(ids));
         }
     }
 
-    void visit(std::shared_ptr<_ListType>& id_list) {
+    void visit(const std::shared_ptr<_ListType>& id_list) {
         /* List visitor firstly visits right node */
         if (!visited_right) {
             visited_right = true;
+#ifdef DEBUG
+            std::cout << "visited list on the right" << std::endl;
+#endif
             ids = std::move(id_list -> list());
         }
     }
@@ -78,8 +92,9 @@ private:
 
     static ConvertHelper<_Type, try_to_convert> convert_helper;
 
+    template <typename T>
     void check_type(std::shared_ptr<Node>& node) {
-        if (node_traits::has_type<_Type>(node)) 
+        if (node_traits::has_type<T>(node)) 
             return;
         if (!convert_helper(node))
             throw SyntaxError("inconsistent types"); /* FIXME! */
@@ -95,21 +110,21 @@ struct OpenBracketVisitor : public AstThrowVisitor {
     using AstThrowVisitor::visit;
 
     OpenBracketVisitor() { 
-        Visits< OpenBracketVisitor,
+        Visits< OpenBracketVisitor, 
                 ExpressionNode, NumberNode, StringNode, SignNode,
-                IdentifierNode, IdentifierListNode >(*this);
+                IdentifierNode, IdentifierListNode >();
     }
 
-    void visit(std::shared_ptr<ExpressionNode> x) { expr = x; }
-    void visit(std::shared_ptr<NumberNode> x) { expr = x; }
-    void visit(std::shared_ptr<StringNode> x) { expr = x; }
-    void visit(std::shared_ptr<SignNode> x) { expr = x; }
+    void visit(const std::shared_ptr<ExpressionNode>& x) { expr = x; }
+    void visit(const std::shared_ptr<NumberNode>& x) { expr = x; }
+    void visit(const std::shared_ptr<StringNode>& x) { expr = x; }
+    void visit(const std::shared_ptr<SignNode>& x) { expr = x; }
 
-    void visit(std::shared_ptr<IdentifierNode> x) { 
+    void visit(const std::shared_ptr<IdentifierNode>& x) { 
         expr = std::make_shared<EnumeratedTypeNode>(node::make_list(x));
     }
 
-    void visit(std::shared_ptr<IdentifierListNode> x) {
+    void visit(const std::shared_ptr<IdentifierListNode>& x) {
         expr = std::make_shared<EnumeratedTypeNode>(x);
     }
 

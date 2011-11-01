@@ -156,9 +156,9 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
             return v.get_expression();
     };
 
-comma=     &infix_r(",", 80, [](PNode x, PNode y) -> PNode {
-                        throw SyntaxError("unexpected ','");
-                        return nullptr; });
+    comma= &infix_r(",", 80, [](PNode x, PNode y) -> PNode {
+            throw SyntaxError("unexpected ','");
+            });
 
     infix("..", 90, 
             [](PNode x, PNode y) -> PNode {
@@ -274,7 +274,7 @@ comma=     &infix_r(",", 80, [](PNode x, PNode y) -> PNode {
         std::forward_list<PNode> variable_declarations;
 
         do {
-            PNode x = p.parse(0);
+            PNode x = p.parse(1);
             if (!node_traits::has_type<VariableDeclNode>(x))
                 throw SyntaxError("expected variable declaration");
             variable_declarations.push_front(x);
@@ -305,7 +305,7 @@ comma=     &infix_r(",", 80, [](PNode x, PNode y) -> PNode {
         std::forward_list<PNode> type_definitions;
 
         do {
-            PNode id = p.parse(0);
+            PNode id = p.parse(1);
             if (!node_traits::has_type<IdentifierNode>(id))
                 throw SyntaxError("expected identifier as a type name");
 
@@ -314,7 +314,7 @@ comma=     &infix_r(",", 80, [](PNode x, PNode y) -> PNode {
             else
                 p.advance();
 
-            PNode type = p.parse(0);
+            PNode type = p.parse(1);
             if (!node_traits::is_type(type))
                 throw SyntaxError("expected type definition after '='");
             
@@ -337,7 +337,7 @@ comma=     &infix_r(",", 80, [](PNode x, PNode y) -> PNode {
 
     add_symbol_to_dict("packed", 1)
     .nud = [this](PrattParser<PNode>& p) -> PNode {
-        PNode type = p.parse(0);
+        PNode type = p.parse(1);
         if (!node_traits::is_unpacked_structured_type(type)) {
             throw SyntaxError("expected unpacked structured type after 'packed'");
         } else {

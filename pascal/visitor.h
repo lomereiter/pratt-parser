@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <memory>
+#include <type_traits>
 
 #include "expression.h"
 #include "syntax_error.h"
@@ -78,50 +79,54 @@ namespace detail {
 #include <typeinfo>
 #endif
 
+template <typename T> struct non_const { typedef T type; };
+
+/* by default, Visitor doesn't change nodes it visits */
+template <template <typename T> class _TypeQualifier = std::add_const>
 class Visitor {
+    typedef typename _TypeQualifier<std::shared_ptr<Node>>::type& PNodeRef;
 public:
+    template <class VisitorType, class... VisitedList>
+    void Visits() {
+        vtable = detail::GetStaticVTable< VisitorType, VisitedList... >();
+    }
+
     template <typename VisitorImpl, typename Visitable>
-    void thunk(std::shared_ptr<Node> node) {
+    void thunk(PNodeRef node) {
         VisitorImpl& visitor = static_cast<VisitorImpl&>(*this);
-        std::shared_ptr<Visitable> visitable = std::static_pointer_cast<Visitable>(node);
+        typename _TypeQualifier<std::shared_ptr<Visitable>>::type visitable = 
+                                std::static_pointer_cast<Visitable>(node);
 #ifdef DEBUG
         std::cout << "Visitor class: " << typeid(VisitorImpl).name() << 
             "; Visitable class: " << typeid(Visitable).name() << std::endl;
 #endif
-        /* Visitor must have 'visit' methods */
+        /* Visitor shall have 'visit' methods */
         visitor.visit(visitable);
     }
 
-    typedef void (Visitor::*Thunk) (std::shared_ptr<Node>);
+    typedef void (Visitor::*Thunk) (PNodeRef);
     typedef detail::VTable<Thunk> VTableType;
 
-    void travel(std::shared_ptr<Node> node) {
-        Thunk th = (*vtable)[node -> tag()];
+    void travel(PNodeRef node) {
+        Thunk th = (*vtable)[node -> tag()]; // tag() shall be virtual
         (this->*th)(node);
     }
 
-    void visit(std::shared_ptr<Node> node) {}
+    void visit(PNodeRef node) {}
 
     const VTableType* vtable;
 };
 
-template <class Visitor, class... VisitedList>
-void Visits(Visitor& visitor) {
-    visitor.vtable = detail::GetStaticVTable< Visitor, VisitedList... >();
-}
-
 namespace detail {
-    template <class _Policy>
-    struct AstVisitor : public Visitor {
-
+    template <class _DefaultBehaviour>
+    struct AstVisitor : public Visitor<std::add_const> {
+        /* constant Visitor */
         AstVisitor() : func() {}
-
-        void visit(std::shared_ptr<Node>) { func(); }
-
+        void visit(const std::shared_ptr<Node>&) { func(); }
         virtual std::shared_ptr<Node> get_expression() { throw 0xBADF00D; }
 
         private:
-            _Policy func;
+            _DefaultBehaviour func;
     };
 
     struct ThrowPolicy {

@@ -1,20 +1,20 @@
 #ifndef NODE_TAGS_H
 #define NODE_TAGS_H
 
+#include <cstddef>
+
 #ifdef DEBUG
-#include <iostream>
-#include <typeinfo>
+#include "debug.h"
 #endif
 
 namespace node_traits {
 
-    struct tag_counter { static int value; };
-    int tag_counter::value = 0;
+    struct tag_counter { static size_t value; };
 
-    template <typename T> struct get_tag { static int value; };
+    template <typename T> struct get_tag { static size_t value; };
     template <typename T>
-    int get_tag_value() {
-        int& tag = get_tag<const T>::value;
+    size_t get_tag_value() {
+        size_t& tag = get_tag<const T>::value;
         if (tag == 0) { /* if not yet initialized */
             tag = ++tag_counter::value;
 #ifdef DEBUG
@@ -24,8 +24,7 @@ namespace node_traits {
         return tag;
     }
 
-/* getting unique tags for all node classes */
-    template <typename T> int get_tag<T>::value = get_tag_value<T>();
+    template <typename T> size_t node_traits::get_tag<T>::value = get_tag_value<T>();
 }
 
 #endif

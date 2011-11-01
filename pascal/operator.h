@@ -8,7 +8,7 @@ enum Operator {
     opXor, opShl, opShr
 };
 namespace operators {
-    const char *operatorName[] = {
+    static const char *operatorName[] = {
         "ADD", "SUBTRACT", "MULTIPLY", "DIVIDE", "PLUS", "MINUS", "NOT", 
         "INTEGER DIVIDE", "MODULO", "OR", "AND", 
         "EQUAL TO", "NOT EQUAL TO", "LESS THAN", "MORE THAN",
