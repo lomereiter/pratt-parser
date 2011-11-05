@@ -12,12 +12,13 @@ template <typename T>
 class Token {
     public: /* TODO: change visibility */
         const Symbol<T>* sym_ptr;
-        std::shared_ptr<T> value_ptr;
+        std::shared_ptr<T> value_ptr; /* needed for literal tokens only */
         size_t start_position, length;
 
         Token(const Symbol<T>& sym, std::shared_ptr<T> val_p=nullptr,
                 size_t start=0, size_t end=0) :
             sym_ptr(&sym),
+            /* TODO: extract to policy */
             value_ptr(val_p), 
             start_position(start),
             length(end - start) {}
@@ -33,6 +34,7 @@ class Token {
         const std::string& id() const { return sym_ptr -> id; }
         int lbp() const { return sym_ptr -> lbp; }
 
+        /* TODO: extract to policy */
         T nud(PrattParser<T>& parser) const {
             if (!sym_ptr -> nud) {
                 if (value_ptr) { /* literal token */
@@ -103,10 +105,17 @@ class Token {
                 if (start >= str.length()) {
                     return Token<T>(symbols.end_symbol());
                 }
+                /* TODO: extract to policy */
                 Token<T> token(*match, 
                         match -> has_parser() ? 
                             std::make_shared<T>(match->parse(str, start, end)) :
                             nullptr, start, end);
+                /*
+                   size_t old_start = start;
+                   start = end;
+                   if (match -> has_parser()) {
+                       return std::unique_ptr<T>(new T(match -> parse(str, start, end)))*/
+                       
                 start = end;
                 return token;
             }

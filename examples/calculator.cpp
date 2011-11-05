@@ -1,4 +1,4 @@
-#include "../parser/parser.h"
+#include "../parser/parser_impl.h"
 
 #include <cctype>
 #include <iostream>
@@ -42,7 +42,7 @@ class Calculator : public Grammar<T> {
             infix("*", 20, mul); infix("/", 20, div);
             prefix("+", 100, pos); prefix("-", 100, neg);
             postfix("!", 110, fac);
-            Grammar<T>::brackets("(",")", std::numeric_limits<int>::max());
+            Grammar<T>::brackets("(",")", std::numeric_limits<int>::max(),[](int x){return x;});
         }
 };
 
