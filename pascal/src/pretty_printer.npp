@@ -1,0 +1,63 @@
+Node -> println 'IMPLEMENT ME!';
+NumberNode -> println <value>;
+IdentifierNode -> print 'IDENTIFIER ', no_indent println <name>;
+IdentifierListNode -> println 'IDENTIFIER LIST:', indented visit_children;
+ConstantNode -> println 'CONSTANT', indented visit child;
+StringNode -> print 'STRING LITERAL: ', println <str>;
+EnumeratedTypeNode -> println 'ENUMERATED TYPE:', indented visit identifiers;
+PointerTypeNode -> print 'POINTER TYPE: ', no_indent visit type;
+RecordTypeNode -> println 'RECORD TYPE', indented visit child;
+SetTypeNode -> println 'SET OF', indented visit type;
+FileTypeNode -> println 'FILE OF', indented visit type;
+IndexTypeNode -> visit type;
+IndexTypeListNode -> visit_children;
+PackedTypeNode -> println 'PACKED TYPE:', indented visit type;
+VariableSectionNode -> println 'VARIABLE DECLARATION SECTION', indented visit declarations;
+TypeDefinitionNode -> print 'TYPE DEFINITION: ', no_indent visit name, indented visit type;
+TypeSectionNode -> println 'TYPE DEFINITION SECTION', indented visit_children;
+OperationNode -> println !'operators::operatorName[e -> op()]',
+                 indented { 'for (const auto& node : e -> args) travel(node);' };
+SignNode -> println !'(e -> sign() == ''+'' ? "PLUS SIGN" : "MINUS SIGN")',
+            indented visit child;
+SubrangeTypeNode -> println 'SUBRANGE TYPE:',
+                    indented { println 'LOWER BOUND', indented visit lower_bound,
+                               println 'UPPER BOUND', indented visit upper_bound };
+VariableDeclNode -> println 'VARIABLE DECLARATION: ',
+                    indented { visit id_list, println 'OF TYPE', indented visit type };
+VariableDeclListNode -> visit_children;
+ArrayTypeNode -> println 'ARRAY WITH BOUNDS', indented visit index_type_list,
+                 println 'OF TYPE',           indented visit type;
+DeclarationNode -> visit child;
+DeclarationListNode -> visit_children;
+ExpressionNode -> visit child;
+ExpressionListNode -> println 'LIST OF EXPRESSIONS:', indented visit_children;
+SetNode -> println 'SET: ', indented visit elements;
+IndexedVariableNode -> println 'INDEXED VARIABLE:', 
+                       indented { println 'ARRAY VARIABLE:', indented visit array_variable,
+                                  println 'INDICES:',        indented visit indices };
+ReferencedVariableNode -> println 'REFERENCED VARIABLE:', indented visit variable;
+FieldDesignatorNode -> println 'RECORD FIELD VARIABLE:',
+                       indented { println 'RECORD VARIABLE:', indented visit variable,
+                                  print 'FIELD NAME: ', no_indent visit field };
+FunctionDesignatorNode -> print 'PROCEDURE/FUNCTION CALL: ', no_indent visit function,
+                          indented visit parameters;
+AssignmentStatementNode -> println 'ASSIGNMENT:', indented { visit variable, visit expression };
+StatementNode -> visit child;
+StatementListNode -> println 'STATEMENT SEQUENCE:', indented visit_children;
+CompoundStatementNode -> println 'COMPOUND STATEMENT:', indented visit child;
+WhileStatementNode -> println 'WHILE STATEMENT:', 
+                      indented { println 'LOOP CONDITION:', indented visit condition,
+                                 println 'LOOP BODY:', indented visit body };
+RepeatStatementNode -> println 'REPEAT STATEMENT:',
+                       indented { println 'LOOP BODY:', indented visit body,
+                                  println 'LOOP CONDITION:', indented visit condition };
+ForStatementNode -> println 'FOR STATEMENT:',
+                    indented { print 'LOOP VARIABLE: ', no_indent visit variable,
+                               indented { print 'DIRECTION: ',
+                                          'std::cout << ((e -> direction) > 0 ? "TO" : "DOWNTO");',
+                                          'std::cout << "\n";',
+                                          println 'INITIAL EXPRESSION:', 
+                                          indented visit initial_expression,
+                                          println 'FINAL EXPRESSION:',
+                                          indented visit final_expression },
+                               println 'LOOP BODY:', indented visit body }
