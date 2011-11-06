@@ -2,6 +2,7 @@
 #define PARSER_TOKEN_IMPL_H
 
 #include "forward.h"
+#include "token.h"
 
 #include <string>
 #include <functional>
@@ -9,117 +10,97 @@
 #include <locale>
 
 template <typename T>
-class Token {
-    public: /* TODO: change visibility */
-        const Symbol<T>* sym_ptr;
-        std::shared_ptr<T> value_ptr; /* needed for literal tokens only */
-        size_t start_position, length;
+Token<T>::Token(const Symbol<T>& sym, size_t start, size_t end) :
+            sym_ptr(&sym), start_position(start), length(end - start) {}
 
-        Token(const Symbol<T>& sym, std::shared_ptr<T> val_p=nullptr,
-                size_t start=0, size_t end=0) :
-            sym_ptr(&sym),
-            /* TODO: extract to policy */
-            value_ptr(val_p), 
-            start_position(start),
-            length(end - start) {}
+template <typename T> Token<T>::~Token() {}
 
-        Token<T>& operator=(Token<T>&& tok) {
-            sym_ptr = std::move(tok.sym_ptr);
-            value_ptr = std::move(tok.value_ptr);
-            start_position = tok.start_position;
-            length = tok.length;
-            return *this;
+template <typename T>
+const std::string& Token<T>::id() const { return sym_ptr -> id; }
+
+template <typename T>
+int Token<T>::lbp() const { return sym_ptr -> lbp; }
+
+template <typename T>
+T Token<T>::nud(PrattParser<T>& parser) const {
+    if (!sym_ptr -> nud) {
+        /* TODO: throw meaningful exception */
+        throw "no nud!";
+    }
+    return sym_ptr -> nud(parser);
+}
+
+template <typename T>
+T Token<T>::led(PrattParser<T>& parser, T left) const {
+    if (!sym_ptr -> led) {
+        /* TODO: throw meaningful exception */
+        throw "no led!";
+    }
+    return sym_ptr -> led(parser, left);
+}
+
+template <typename T>
+bool Token<T>::iterator::is_white_space(char c) {
+    static std::locale loc;
+    return std::isspace(c, loc);
+}
+
+template <typename T>
+Token<T>::iterator::iterator(const std::string& s, 
+         const SymbolDict<T>& symbols) :
+    str(s), symbols(symbols), start(0), end(0) {
+        operator++();
+}
+
+template <typename T>
+typename Token<T>::iterator& Token<T>::iterator::operator++() {
+    while (start < str.length() &&
+           is_white_space(str[start]))
+        ++start;
+
+    if (start < str.length()) {
+        end = start;
+        match = nullptr;
+        for (auto it = symbols.cbegin(); it != symbols.cend(); ++it) {
+            const Symbol<T>& sym = it -> second;
+            size_t p = sym.scan(str, start);
+            /* longest match with highest precedence */
+            if (p > end || 
+                    (match != nullptr && 
+                     sym.lbp > match -> lbp &&
+                     p == end)) {
+                match = &sym;
+                end = p;
+            } 
         }
-
-        const std::string& id() const { return sym_ptr -> id; }
-        int lbp() const { return sym_ptr -> lbp; }
-
-        /* TODO: extract to policy */
-        T nud(PrattParser<T>& parser) const {
-            if (!sym_ptr -> nud) {
-                if (value_ptr) { /* literal token */
-                    return *value_ptr;
-                } else {
-                    /* TODO: throw meaningful exception */
-                    throw "no nud!";
-                }
-            }
-            return sym_ptr -> nud(parser);
+        if (end == start) {
+            throw "Invalid symbol"; /* FIXME */
         }
+    }
+    return *this;
+}
 
-        T led(PrattParser<T>& parser, T left) const {
-            if (!sym_ptr -> led) {
-                /* TODO: throw meaningful exception */
-                throw "no led!";
-            }
-            return sym_ptr -> led(parser, left);
-        }
+template <typename T>
+std::unique_ptr<Token<T>> Token<T>::iterator::operator*() {
+    if (start >= str.length()) {
+        return std::unique_ptr<Token<T>>(new Token<T>(symbols.end_symbol()));
+    }
+    size_t old_start = start;
+    start = end;
+    if (match -> has_parser()) {
+        return std::unique_ptr<LiteralToken<T>>(
+                     new LiteralToken<T>(*match, match -> parse(str, old_start, end),
+                                         old_start, end));
+    } else {
+        return std::unique_ptr<Token<T>>(new Token<T>(*match, old_start, end));
+    }
+}
 
-        /* Token<T>::iterator class */
-        class iterator {
-            const std::string& str;
-            const SymbolDict<T>& symbols;
-            size_t start, end;
-            const Symbol<T>* match;
+template <typename T>
+LiteralToken<T>::LiteralToken(const Symbol<T>& sym, T val, size_t start, size_t end) :
+    Token<T>(sym, start, end), value(val) {}
 
-            bool is_white_space(char c) {
-                static std::locale loc;
-                return std::isspace(c, loc);
-            }
-
-            public:
-            iterator(const std::string& s, 
-                     const SymbolDict<T>& symbols) :
-                str(s), symbols(symbols), start(0), end(0) {
-                    operator++();
-            }
-
-            iterator& operator++() {
-                while (start < str.length() &&
-                       is_white_space(str[start]))
-                    ++start;
-
-                if (start < str.length()) {
-                    end = start;
-                    match = nullptr;
-                    for (auto it = symbols.cbegin(); it != symbols.cend(); ++it) {
-                        const Symbol<T>& sym = it -> second;
-                        size_t p = sym.scan(str, start);
-                        /* longest match with highest precedence */
-                        if (p > end ||
-                                (match != nullptr && 
-                                 sym.lbp > match->lbp &&
-                                 p == end)) {
-                            match = &sym;
-                            end = p;
-                        } 
-                    }
-                    if (end == start) {
-                        throw "Invalid symbol"; /* FIXME */
-                    }
-                }
-                return *this;
-            }
-
-            Token<T> operator*() {
-                if (start >= str.length()) {
-                    return Token<T>(symbols.end_symbol());
-                }
-                /* TODO: extract to policy */
-                Token<T> token(*match, 
-                        match -> has_parser() ? 
-                            std::make_shared<T>(match->parse(str, start, end)) :
-                            nullptr, start, end);
-                /*
-                   size_t old_start = start;
-                   start = end;
-                   if (match -> has_parser()) {
-                       return std::unique_ptr<T>(new T(match -> parse(str, start, end)))*/
-                       
-                start = end;
-                return token;
-            }
-        };
-};
+template <typename T>
+T LiteralToken<T>::nud(PrattParser<T>& p) const { return value; }
 
 #endif

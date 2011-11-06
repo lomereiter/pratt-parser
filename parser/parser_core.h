@@ -4,13 +4,14 @@
 #include "forward.h"
 
 #include <string>
+#include <memory>
 
 template <typename T>
 class PrattParser {
         const std::string& str;
         typename Token<T>::iterator curr;
-        Token<T> token;
-        Token<T> next();
+        std::unique_ptr<Token<T>> token;
+        std::unique_ptr<Token<T>> next();
 
     public:
         PrattParser(const std::string&, const SymbolDict<T>&);

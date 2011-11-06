@@ -30,8 +30,11 @@ class Symbol {
         bool has_scanner() const;
         bool has_parser() const;
 
-        Symbol& set_scanner(const ScannerType& s);
-        Symbol& set_parser(const ParserType& p);
+        /* set_parser causes parser to treat 
+         * the tokens produced by this symbol 
+         * as literals */
+        Symbol<T>& set_parser(const ParserType& p);
+        Symbol<T>& set_scanner(const ScannerType& s);
 };
 
 template <typename T>

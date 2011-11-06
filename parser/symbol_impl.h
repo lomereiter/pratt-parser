@@ -2,87 +2,101 @@
 #define PARSER_SYMBOL_IMPL_H
 
 #include "forward.h"
+#include "symbol.h"
 
 #include <functional>
 #include <string>
 #include <map>
 #include <limits>
+template <typename T>
+Symbol<T>::Symbol(std::string id, int lbp) : id(id), lbp(lbp) {}
 
 template <typename T>
-class Symbol {
-
-        typedef std::function<size_t(const std::string& str, size_t pos)> ScannerType;
-        typedef std::function<T(const std::string& str, size_t beg, size_t end)> ParserType;
-
-        ScannerType scanner;
-        ParserType parser;
-    public:
-        std::string id;
-        int lbp;
-        std::function<T(PrattParser<T>&)> nud;
-        std::function<T(PrattParser<T>&, T)> led;
-
-        Symbol(std::string id=std::string(), int lbp=0) : id(id), lbp(lbp) {}
-
-        size_t scan(const std::string& str, size_t pos) const {
-            if (scanner) {
-                return scanner(str, pos);
-            } else {
-                /* the default behaviour */
-                size_t len = id.length();
-                for (size_t i = 0; i < len; ++i) {
-                    if (i + pos >= str.length() || id[i] != str[i + pos])
-                        return pos;
-                }
-                return pos + len;
-            }
+size_t Symbol<T>::scan(const std::string& str, size_t pos) const {
+    if (scanner) {
+        return scanner(str, pos);
+    } else {
+        /* the default behaviour */
+        size_t len = id.length();
+        for (size_t i = 0; i < len; ++i) {
+            if (i + pos >= str.length() || id[i] != str[i + pos])
+                return pos;
         }
-
-        T parse(const std::string& str, size_t beg, size_t end) const {
-            if (parser) {
-                return parser(str, beg, end);
-            } else {
-                return T();
-            }
-        }
-
-        bool has_scanner() const { return !!scanner; }
-        bool has_parser() const { return !!parser; }
-
-        Symbol& set_scanner(const ScannerType& s) {
-            scanner = s;
-            return *this;
-        }
-
-        Symbol& set_parser(const ParserType& p) {
-            parser = p;
-            return *this;
-        }
-};
-
-template <typename T>
-class SymbolDict {
-    typedef std::map<std::string, Symbol<T>> MapType;
-
-    std::string end_id;
-    MapType dict;
-public:
-    typedef typename MapType::iterator iterator;
-    typedef typename MapType::const_iterator const_iterator;
-
-    SymbolDict(std::string end_id) : end_id(end_id) {
-        Symbol<T> s(end_id, std::numeric_limits<int>::min());
-        dict[end_id] = s;
+        return pos + len;
     }
+}
 
-    iterator begin() { return dict.begin(); }
-    iterator end() { return dict.end(); }
-    const_iterator cbegin() const { return dict.cbegin(); }
-    const_iterator cend() const { return dict.cend(); }
-    iterator find(const std::string& id) { return dict.find(id); }
-    Symbol<T>& operator[](const std::string& id) { return dict[id]; }
-    const Symbol<T>& end_symbol() const { return dict.find(end_id) -> second; }
-    const std::string& get_end_id() { return end_id; }
-};
+template <typename T>
+T Symbol<T>::parse(const std::string& str, size_t beg, size_t end) const {
+    if (parser) {
+        return parser(str, beg, end);
+    } else {
+        return T();
+    }
+}
+
+template <typename T>
+bool Symbol<T>::has_scanner() const { return !!scanner; }
+        
+template <typename T>
+bool Symbol<T>::has_parser() const { return !!parser; }
+
+template <typename T> 
+Symbol<T>& Symbol<T>::set_scanner(const ScannerType& s) {
+    scanner = s; return *this;
+}
+
+template <typename T>
+Symbol<T>& Symbol<T>::set_parser(const ParserType& p) {
+    parser = p; return *this;
+}
+
+/* SymbolDict functions */
+
+template <typename T>
+SymbolDict<T>::SymbolDict(std::string end_id) : end_id(end_id) {
+    Symbol<T> s(end_id, std::numeric_limits<int>::min());
+    dict[end_id] = s;
+}
+
+template <typename T>
+typename SymbolDict<T>::iterator SymbolDict<T>::begin() { 
+    return dict.begin(); 
+}
+
+template <typename T>
+typename SymbolDict<T>::iterator SymbolDict<T>::end() {
+    return dict.end();
+}
+
+template <typename T> 
+typename SymbolDict<T>::const_iterator SymbolDict<T>::cbegin() const { 
+    return dict.cbegin(); 
+}
+
+template <typename T>
+typename SymbolDict<T>::const_iterator SymbolDict<T>::cend() const { 
+    return dict.cend(); 
+}
+
+template <typename T>
+typename SymbolDict<T>::iterator SymbolDict<T>::find(const std::string& id) { 
+    return dict.find(id); 
+}
+
+template <typename T>
+Symbol<T>& SymbolDict<T>::operator[](const std::string& id) {
+    return dict[id]; 
+}
+
+template <typename T>
+const Symbol<T>& SymbolDict<T>::end_symbol() const { 
+    return dict.find(end_id) -> second; 
+}
+
+template <typename T>
+const std::string& SymbolDict<T>::get_end_id() { 
+    return end_id; 
+}
 
 #endif
