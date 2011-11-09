@@ -23,7 +23,7 @@ public:
         add_symbol_to_dict("(identifier)", 0).set_scanner(pascal::identifier_scanner)
                                              .set_parser(pascal::identifier_parser);
 
-        infix("->", 10, [&node_names](string node_name, string body) -> string {
+        infix("->", 10, [this](string node_name, string body) -> string {
             node_names.push_back(node_name);
             return "void PrettyPrinter::visit(const std::shared_ptr<" + node_name + ">& e) {" 
                 + '\n' + body + '\n' + '}' + '\n';
@@ -41,7 +41,9 @@ public:
                        
         add_symbol_to_dict("visit_children", 50)
         .set_parser([](const std::string&, size_t, size_t) {
-                return "for (auto child : e -> list()) travel(child);\n"; });
+                return "for (auto it = e -> list().begin(); it != e -> list().end(); ++it)"
+                       "travel(*it);\n";
+                });
 
         brackets("{", "}", 100500, [](string s) { return s; });
 
@@ -102,8 +104,8 @@ public:
                "struct PrettyPrinter : public Visitor<std::add_const> {\n"
                "PrettyPrinter(int sw=2);\n";
 
-        for (const auto& node_name : node_names) {
-            out << "void visit(const std::shared_ptr<" + node_name + " >&);\n";
+        for (auto it = node_names.begin(); it != node_names.end(); ++it) {
+            out << "void visit(const std::shared_ptr<" + *it + " >&);\n";
         }
         out << "private:\n"
                "int indent, sw;\n"

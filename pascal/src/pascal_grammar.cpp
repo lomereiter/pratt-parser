@@ -128,7 +128,7 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
                 return std::make_shared<PointerTypeNode>(x);
             });
 
-    infix(":", 70, 
+    colon = &infix(":", 70, 
             [](PNode x, PNode y) -> PNode {
                 if (!node_traits::is_list_of<IdentifierNode>(x)) 
                     throw SyntaxError("expected identifier list");
@@ -210,13 +210,11 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
 
     add_symbol_to_dict("[", 1000)/* big enough for parsing expressions like 'x + a[2]' */
     .led = [parse_expression_list_and_closing_bracket](PrattParser<PNode>& p, PNode left) -> PNode {
-        if (!node_traits::is_variable(left))
+        if (!node_traits::is_convertible_to<VariableNode>(left))
             throw SyntaxError("expected a variable before '['");
         return std::make_shared<IndexedVariableNode>(left,
                 parse_expression_list_and_closing_bracket(p));
     };
-
-    add_symbol_to_dict("of", 1);
 
     add_symbol_to_dict("set", 1)
     .nud = [](PrattParser<PNode>& p) -> PNode {
@@ -284,6 +282,41 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
                          std::move(variable_declarations)));
     };
 
+    add_symbol_to_dict("const", 1)
+    .nud = [this](PrattParser<PNode>& p) -> PNode {
+        lbp_guard semicolon_guard(*(this -> semicolon), 0);
+        lbp_guard equal_sign_guard(*(this -> sign_eq), 0);
+        
+        std::forward_list<PNode> const_defs;
+        do {
+            PNode id = p.parse(0);
+            if (!node_traits::has_type<IdentifierNode>(id))
+                throw SyntaxError("expected identifier in constant definition");
+            if (p.next_token_as_string() != "=")
+                throw SyntaxError("expected '=' after identifier");
+            p.advance();
+            PNode constant = p.parse(0);
+            if (!node_traits::is_convertible_to<ConstantNode>(constant))
+                throw SyntaxError("expected constant after '='");
+            else
+                constant = node::convert_to<ConstantNode>(constant);
+            const_defs.push_front(
+                    std::make_shared<ConstDefinitionNode>(id, constant));
+
+            if (p.next_token_as_string() != ";")
+                throw SyntaxError("expected ';' after constant definition");
+            else
+                p.advance();
+
+            std::string next = p.next_token_as_string();
+            if (next == "begin" || next == "procedure" || next == "function" ||
+                next == "const" || next == "type" || next == "var" || next == "") 
+                break;
+        } while (true);
+        const_defs.reverse();
+        return std::make_shared<ConstSectionNode>(std::move(const_defs));
+    };
+
     add_symbol_to_dict("type", 1)
     .nud = [this](PrattParser<PNode>& p) -> PNode {
         lbp_guard semicolon_guard(*(this -> semicolon), 0);
@@ -333,13 +366,13 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
     };
 
     postfix("^", 1, [](PNode node) -> PNode {
-            if (!node_traits::is_variable(node)) 
+            if (!node_traits::is_convertible_to<VariableNode>(node)) 
                 throw SyntaxError("expected a variable before '^'");
             return std::make_shared<ReferencedVariableNode>(node);
         });
 
     infix(".", 1000, [](PNode var, PNode field) -> PNode {
-        if (!node_traits::is_variable(var))
+        if (!node_traits::is_convertible_to<VariableNode>(var))
             throw SyntaxError("expected a variable before '.'");
         if (!node_traits::has_type<IdentifierNode>(field)) 
             throw SyntaxError("expected identifier after '.'");
@@ -366,7 +399,7 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
 
     infix(":=", 40,
             [](PNode var, PNode expr) -> PNode {
-                if (!node_traits::is_variable(var))
+                if (!node_traits::is_convertible_to<VariableNode>(var))
                     throw SyntaxError("expected variable before ':=' token");
                 if (!node_traits::is_convertible_to<ExpressionNode>(expr))
                     throw SyntaxError("expected expression after ':=' token");
@@ -452,6 +485,102 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
         if (!node_traits::is_convertible_to<StatementNode>(body))
             throw SyntaxError("expected statement after 'do'");
         return std::make_shared<ForStatementNode>(_assignment, sign, final_expr, body);
+    };
+
+    add_symbol_to_dict("then", 0);
+    add_symbol_to_dict("else", 0);
+    add_symbol_to_dict("if", 1)
+    .nud = [](PrattParser<PNode>& p) -> PNode {
+        PNode expr = p.parse(1);
+        if (!node_traits::is_convertible_to<ExpressionNode>(expr))
+            throw SyntaxError("expected expression after 'if'");
+        if (p.next_token_as_string() != "then")
+            throw SyntaxError("expected 'then'");
+        p.advance();
+        PNode st = p.parse(1);
+        if (!node_traits::is_convertible_to<StatementNode>(st))
+            throw SyntaxError("expected statement after 'then'");
+        if (p.next_token_as_string() != "else") {
+            return std::make_shared<IfThenNode>(expr, st);
+        } else {
+            p.advance();
+            PNode _else = p.parse(1);
+            if (!node_traits::is_convertible_to<StatementNode>(st))
+                throw SyntaxError("expected statement after 'else'");
+            return std::make_shared<IfThenElseNode>(expr, st, _else);
+        }
+    };
+
+    add_symbol_to_dict("do", 0);
+    add_symbol_to_dict("with", 1)
+    .nud = [this](PrattParser<PNode>& p) -> PNode {
+        behaviour_guard<RightAssociative> comma_guard(*(this->comma),
+            [](PNode left, PNode right) {
+                return ListVisitor<VariableNode>(left, right).get_expression();
+            });
+        PNode list = p.parse(0);
+        if (!node_traits::is_list_of<VariableNode>(list))
+            throw SyntaxError("expected list of record variables after 'with'");
+        if (p.next_token_as_string() != "do")
+            throw SyntaxError("expected 'do' in with-statement");
+        p.advance();
+        PNode st = p.parse(1);
+        if (!node_traits::is_convertible_to<StatementNode>(st))
+            throw SyntaxError("expected statement after 'do'");
+        return std::make_shared<WithStatementNode>(list, st);
+    };
+
+    add_symbol_to_dict("case", 1)
+    .nud = [this](PrattParser<PNode>& p) -> PNode {
+        PNode expr = p.parse(0);
+        if (!node_traits::is_convertible_to<ExpressionNode>(expr))
+            throw SyntaxError("expected expression after 'case'");
+        if (p.next_token_as_string() != "of")
+            throw SyntaxError("expected 'of' after expression");
+
+        p.advance();
+
+        behaviour_guard<RightAssociative> comma_guard(*(this -> comma),
+            [](PNode left, PNode right) {
+                return ListVisitor<ConstantNode>(left, right).get_expression();
+            });
+
+        behaviour_guard<LeftAssociative> colon_guard(*(this -> colon), 1,
+            [](PNode left, PNode right) -> PNode {
+                if (!node_traits::is_list_of<ConstantNode>(left))
+                    throw SyntaxError("expected list of constants before ':'");
+                if (!node_traits::is_convertible_to<StatementNode>(right))
+                    throw SyntaxError("expected statement after ':'");
+                return std::make_shared<CaseLimbNode>(left, right);
+            });
+
+        lbp_guard semicolon_guard(*(this -> semicolon), 0);
+        
+        std::forward_list<PNode> limbs;
+
+        do {
+            PNode limb = p.parse(0);
+            if (!node_traits::has_type<CaseLimbNode>(limb))
+                throw SyntaxError("expected case-limb");
+            limbs.push_front(limb);
+            std::string next = p.next_token_as_string();
+            if (next == ";") {
+                p.advance();
+                if (p.next_token_as_string() == "end") {
+                    p.advance();
+                    break;
+                }
+            } else if (next == "end") {
+                p.advance();
+                break;
+            } else {
+                throw SyntaxError("expected ';' or 'end'");
+            }
+        } while (true);
+
+        limbs.reverse();
+        return std::make_shared<CaseStatementNode>(expr,
+                std::make_shared<CaseLimbListNode>(std::move(limbs)));
     };
 }
 

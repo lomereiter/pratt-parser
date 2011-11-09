@@ -88,7 +88,7 @@ std::unique_ptr<Token<T>> Token<T>::iterator::operator*() {
     size_t old_start = start;
     start = end;
     if (match -> has_parser()) {
-        return std::unique_ptr<LiteralToken<T>>(
+        return std::unique_ptr<Token<T>>(
                      new LiteralToken<T>(*match, match -> parse(str, old_start, end),
                                          old_start, end));
     } else {

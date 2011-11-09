@@ -16,7 +16,8 @@ VariableSectionNode -> println 'VARIABLE DECLARATION SECTION', indented visit de
 TypeDefinitionNode -> print 'TYPE DEFINITION: ', no_indent visit name, indented visit type;
 TypeSectionNode -> println 'TYPE DEFINITION SECTION', indented visit_children;
 OperationNode -> println !'operators::operatorName[e -> op()]',
-                 indented { 'for (const auto& node : e -> args) travel(node);' };
+                 indented { 'for (auto it = e -> args.cbegin(); it != e -> args.cend(); ++it)
+                                 travel(*it);' };
 SignNode -> println !'(e -> sign() == ''+'' ? "PLUS SIGN" : "MINUS SIGN")',
             indented visit child;
 SubrangeTypeNode -> println 'SUBRANGE TYPE:',
@@ -60,4 +61,26 @@ ForStatementNode -> println 'FOR STATEMENT:',
                                           indented visit initial_expression,
                                           println 'FINAL EXPRESSION:',
                                           indented visit final_expression },
-                               println 'LOOP BODY:', indented visit body }
+                               println 'LOOP BODY:', indented visit body };
+IfThenNode -> println 'IF-THEN STATEMENT:',
+              indented { println 'CONDITION:', indented visit condition,
+                         println 'THEN:', indented visit body };
+IfThenElseNode -> println 'IF-THEN-ELSE STATEMENT:',
+                  indented { println 'CONDITION:', indented visit condition,
+                             println 'THEN-BRANCH:', indented visit then_body,
+                             println 'ELSE-BRANCH:', indented visit else_body };
+VariableNode -> visit variable;
+VariableListNode -> visit_children;
+WithStatementNode -> println 'WITH STATEMENT:', 
+                     indented { println 'RECORD VARIABLES:', indented visit record_variables,
+                                println 'BODY:', indented visit body };
+ConstantListNode -> println 'LIST OF CONSTANTS:', indented visit_children;
+CaseLimbNode -> println 'CONSTANTS:', indented visit constants,
+                println 'BODY:', indented visit body;
+CaseLimbListNode -> visit_children;
+CaseStatementNode -> println 'CASE STATEMENT:',
+                     indented { println 'EXPRESSION:', indented visit expression,
+                                println 'CASES:', indented visit limbs };
+ConstDefinitionNode -> print 'CONSTANT DEFINITION: ', no_indent visit identifier,
+                       indented visit constant;
+ConstSectionNode -> println 'CONSTANT DEFINITION PART:', indented visit_children

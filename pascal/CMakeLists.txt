@@ -40,11 +40,9 @@ set (SOURCES
         src/operator.cpp
         )
 
-set (CMAKE_CXX_COMPILER "/usr/bin/g++-4.6")
+set (CMAKE_CXX_COMPILER "g++-4.6")
 
-set (CMAKE_CXX_FLAGS "-std=c++0x -g -Wall -pedantic" )
-
-set (CMAKE_CXX_FLAGS_DEBUG "-ggdb")
+set (CMAKE_CXX_FLAGS "-std=c++0x -Os -Wall -pedantic -fno-rtti" )
 
 add_executable (pp_gen pretty_printer_gen/pp_gen.cpp src/pascal_literals.cpp)
 

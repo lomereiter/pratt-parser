@@ -95,7 +95,7 @@ namespace node_traits {
                 IdentifierNode, PointerTypeNode, PackedTypeNode
                          >::list>::list> IsType;
 
-        typedef AreConvertibleTo< dummy_type,
+        typedef AreConvertibleTo< VariableNode,
             IdentifierNode, IndexedVariableNode, ReferencedVariableNode,
             FieldDesignatorNode> IsVar;
 
@@ -104,14 +104,23 @@ namespace node_traits {
                 OperationNode, StringNode, NumberNode, SetNode, 
                 SignNode, FunctionDesignatorNode>::list> IsExpr;
 
-        typedef AreConvertibleTo< dummy_type,
+        typedef AreConvertibleTo< StatementNode,
                 AssignmentStatementNode, CompoundStatementNode,
                 WhileStatementNode, RepeatStatementNode, ForStatementNode,
-                FunctionDesignatorNode> IsStatement;
+
+                IdentifierNode, FunctionDesignatorNode, // <- indistinguishable during parsing
+
+                IfThenNode, IfThenElseNode,
+                WithStatementNode, CaseStatementNode> IsStatement;
 
         static bool __is_convertible_helper(type<ExpressionNode>, const std::shared_ptr<Node>& node) {
             static IsExpr is_expr;
             return is_expr(node);
+        }
+        
+        static bool __is_convertible_helper(type<VariableNode>, const std::shared_ptr<Node>& node) {
+            static IsVar is_var;
+            return is_var(node);
         }
 
         static bool __is_convertible_helper(type<IndexTypeNode>, const std::shared_ptr<Node>& node) {
@@ -141,7 +150,6 @@ namespace node_traits {
 
     static detail::IsUST is_unpacked_structured_type;
     static detail::IsType is_type;
-    static detail::IsVar is_variable;
 
     template <typename _Node>
     bool is_convertible_to(const std::shared_ptr<Node>& node) { 
@@ -155,6 +163,7 @@ namespace node_traits {
     template <> struct there_exist_coercions_to<ConstantNode>   { enum { value = 1 }; };
     template <> struct there_exist_coercions_to<ExpressionNode> { enum { value = 1 }; };
     template <> struct there_exist_coercions_to<StatementNode>  { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<VariableNode>   { enum { value = 1 }; };
 
     template <typename T> struct list_of { typedef ListOf<T> type; };
     

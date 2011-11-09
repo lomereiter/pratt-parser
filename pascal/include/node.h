@@ -242,4 +242,52 @@ struct ForStatementNode : public VisitableNode<ForStatementNode> {
         final_expression(final_expression), body(body), direction(dir) {}
 };
 
+struct IfThenNode : public VisitableNode<IfThenNode> {
+    std::shared_ptr<Node> condition;
+    std::shared_ptr<Node> body;
+    IfThenNode(const std::shared_ptr<Node>& cond, const std::shared_ptr<Node>& body) :
+        condition(cond), body(body) {}
+};
+
+struct IfThenElseNode : public VisitableNode<IfThenElseNode> {
+    std::shared_ptr<Node> condition;
+    std::shared_ptr<Node> then_body;
+    std::shared_ptr<Node> else_body;
+    IfThenElseNode(const std::shared_ptr<Node>& cond, const std::shared_ptr<Node>& _then,
+                   const std::shared_ptr<Node>& _else) : 
+        condition(cond), then_body(_then), else_body(_else) {}
+};
+
+struct VariableNode : public VisitableNode<VariableNode> {
+    std::shared_ptr<Node> variable;
+    VariableNode(const std::shared_ptr<Node>& var) : variable(var) {}
+};
+
+struct WithStatementNode : public VisitableNode<WithStatementNode> {
+    std::shared_ptr<Node> record_variables;
+    std::shared_ptr<Node> body;
+    WithStatementNode(const std::shared_ptr<Node>& vars, const std::shared_ptr<Node>& body) :
+        record_variables(vars), body(body) {}
+};
+
+struct CaseLimbNode : public VisitableNode<CaseLimbNode> {
+    std::shared_ptr<Node> constants;
+    std::shared_ptr<Node> body;
+    CaseLimbNode(const std::shared_ptr<Node>& constants,
+                 const std::shared_ptr<Node>& body) : constants(constants), body(body) {}
+};
+
+struct CaseStatementNode : public VisitableNode<CaseStatementNode> {
+    std::shared_ptr<Node> expression;
+    std::shared_ptr<Node> limbs;
+    CaseStatementNode(const std::shared_ptr<Node>& expr, const std::shared_ptr<Node>& limbs) :
+        expression(expr), limbs(limbs) {}
+};
+
+struct ConstDefinitionNode : public VisitableNode<ConstDefinitionNode> {
+    std::shared_ptr<Node> identifier;
+    std::shared_ptr<Node> constant;
+    ConstDefinitionNode(const std::shared_ptr<Node>& id, const std::shared_ptr<Node>& c) :
+        identifier(id), constant(c) {}
+};
 #endif

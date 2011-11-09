@@ -14,6 +14,8 @@ struct OperationNode;
 struct StringNode;
 struct SignNode;
 struct ConstantNode;
+typedef ListOf<ConstantNode> ConstantListNode;
+
 struct SubrangeTypeNode;
 struct EnumeratedTypeNode;
 struct PointerTypeNode;
@@ -55,5 +57,19 @@ struct RepeatStatementNode;
 struct ForStatementNode;
 struct StatementNode;
 typedef ListOf<StatementNode> StatementListNode;
+
+struct IfThenNode;
+struct IfThenElseNode;
+
+struct VariableNode;
+typedef ListOf<VariableNode> VariableListNode;
+
+struct WithStatementNode;
+struct CaseLimbNode;
+typedef ListOf<CaseLimbNode> CaseLimbListNode;
+struct CaseStatementNode;
+
+struct ConstDefinitionNode;
+typedef ListOf<ConstDefinitionNode> ConstSectionNode;
 
 #endif

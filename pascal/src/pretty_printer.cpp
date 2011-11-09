@@ -8,7 +8,7 @@
 PrettyPrinter::PrettyPrinter(int sw) : indent(0), sw(sw),
 is_var_section(false)
 {
-Visits<PrettyPrinter, Node, NumberNode, IdentifierNode, IdentifierListNode, ConstantNode, StringNode, EnumeratedTypeNode, PointerTypeNode, RecordTypeNode, SetTypeNode, FileTypeNode, IndexTypeNode, IndexTypeListNode, PackedTypeNode, VariableSectionNode, TypeDefinitionNode, TypeSectionNode, OperationNode, SignNode, SubrangeTypeNode, VariableDeclNode, VariableDeclListNode, ArrayTypeNode, DeclarationNode, DeclarationListNode, ExpressionNode, ExpressionListNode, SetNode, IndexedVariableNode, ReferencedVariableNode, FieldDesignatorNode, FunctionDesignatorNode, AssignmentStatementNode, StatementNode, StatementListNode, CompoundStatementNode, WhileStatementNode, RepeatStatementNode, ForStatementNode>();
+Visits<PrettyPrinter, Node, NumberNode, IdentifierNode, IdentifierListNode, ConstantNode, StringNode, EnumeratedTypeNode, PointerTypeNode, RecordTypeNode, SetTypeNode, FileTypeNode, IndexTypeNode, IndexTypeListNode, PackedTypeNode, VariableSectionNode, TypeDefinitionNode, TypeSectionNode, OperationNode, SignNode, SubrangeTypeNode, VariableDeclNode, VariableDeclListNode, ArrayTypeNode, DeclarationNode, DeclarationListNode, ExpressionNode, ExpressionListNode, SetNode, IndexedVariableNode, ReferencedVariableNode, FieldDesignatorNode, FunctionDesignatorNode, AssignmentStatementNode, StatementNode, StatementListNode, CompoundStatementNode, WhileStatementNode, RepeatStatementNode, ForStatementNode, IfThenNode, IfThenElseNode, VariableNode, VariableListNode, WithStatementNode, ConstantListNode, CaseLimbNode, CaseLimbListNode, CaseStatementNode, ConstDefinitionNode, ConstSectionNode>();
 }
 void PrettyPrinter::visit(const std::shared_ptr<Node>& e) {
 std::cout << std::string(indent, ' ') << "IMPLEMENT ME!";
@@ -33,7 +33,7 @@ void PrettyPrinter::visit(const std::shared_ptr<IdentifierListNode>& e) {
 std::cout << std::string(indent, ' ') << "IDENTIFIER LIST:";
 std::cout << std::endl;
 indent += sw;
-for (auto child : e -> list()) travel(child);
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 indent -= sw;
 
 }
@@ -96,7 +96,7 @@ travel(e -> type);
 
 }
 void PrettyPrinter::visit(const std::shared_ptr<IndexTypeListNode>& e) {
-for (auto child : e -> list()) travel(child);
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 
 }
 void PrettyPrinter::visit(const std::shared_ptr<PackedTypeNode>& e) {
@@ -130,7 +130,7 @@ void PrettyPrinter::visit(const std::shared_ptr<TypeSectionNode>& e) {
 std::cout << std::string(indent, ' ') << "TYPE DEFINITION SECTION";
 std::cout << std::endl;
 indent += sw;
-for (auto child : e -> list()) travel(child);
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 indent -= sw;
 
 }
@@ -138,7 +138,8 @@ void PrettyPrinter::visit(const std::shared_ptr<OperationNode>& e) {
 std::cout << std::string(indent, ' ') << operators::operatorName[e -> op()];
 std::cout << std::endl;
 indent += sw;
-for (const auto& node : e -> args) travel(node);indent -= sw;
+for (auto it = e -> args.cbegin(); it != e -> args.cend(); ++it)
+                                 travel(*it);indent -= sw;
 
 }
 void PrettyPrinter::visit(const std::shared_ptr<SignNode>& e) {
@@ -180,7 +181,7 @@ indent -= sw;
 
 }
 void PrettyPrinter::visit(const std::shared_ptr<VariableDeclListNode>& e) {
-for (auto child : e -> list()) travel(child);
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 
 }
 void PrettyPrinter::visit(const std::shared_ptr<ArrayTypeNode>& e) {
@@ -201,7 +202,7 @@ travel(e -> child);
 
 }
 void PrettyPrinter::visit(const std::shared_ptr<DeclarationListNode>& e) {
-for (auto child : e -> list()) travel(child);
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 
 }
 void PrettyPrinter::visit(const std::shared_ptr<ExpressionNode>& e) {
@@ -212,7 +213,7 @@ void PrettyPrinter::visit(const std::shared_ptr<ExpressionListNode>& e) {
 std::cout << std::string(indent, ' ') << "LIST OF EXPRESSIONS:";
 std::cout << std::endl;
 indent += sw;
-for (auto child : e -> list()) travel(child);
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 indent -= sw;
 
 }
@@ -294,7 +295,7 @@ void PrettyPrinter::visit(const std::shared_ptr<StatementListNode>& e) {
 std::cout << std::string(indent, ' ') << "STATEMENT SEQUENCE:";
 std::cout << std::endl;
 indent += sw;
-for (auto child : e -> list()) travel(child);
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 indent -= sw;
 
 }
@@ -367,6 +368,131 @@ std::cout << std::endl;
 indent += sw;
 travel(e -> body);
 indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<IfThenNode>& e) {
+std::cout << std::string(indent, ' ') << "IF-THEN STATEMENT:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "CONDITION:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> condition);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "THEN:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> body);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<IfThenElseNode>& e) {
+std::cout << std::string(indent, ' ') << "IF-THEN-ELSE STATEMENT:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "CONDITION:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> condition);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "THEN-BRANCH:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> then_body);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "ELSE-BRANCH:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> else_body);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<VariableNode>& e) {
+travel(e -> variable);
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<VariableListNode>& e) {
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<WithStatementNode>& e) {
+std::cout << std::string(indent, ' ') << "WITH STATEMENT:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "RECORD VARIABLES:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> record_variables);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "BODY:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> body);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<ConstantListNode>& e) {
+std::cout << std::string(indent, ' ') << "LIST OF CONSTANTS:";
+std::cout << std::endl;
+indent += sw;
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<CaseLimbNode>& e) {
+std::cout << std::string(indent, ' ') << "CONSTANTS:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> constants);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "BODY:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> body);
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<CaseLimbListNode>& e) {
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<CaseStatementNode>& e) {
+std::cout << std::string(indent, ' ') << "CASE STATEMENT:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "EXPRESSION:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> expression);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "CASES:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> limbs);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<ConstDefinitionNode>& e) {
+std::cout << std::string(indent, ' ') << "CONSTANT DEFINITION: ";
+{ int old_indent = indent;
+indent = 0;
+travel(e -> identifier);
+indent = old_indent;
+}indent += sw;
+travel(e -> constant);
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<ConstSectionNode>& e) {
+std::cout << std::string(indent, ' ') << "CONSTANT DEFINITION PART:";
+std::cout << std::endl;
+indent += sw;
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 indent -= sw;
 
 }

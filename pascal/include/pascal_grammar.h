@@ -19,7 +19,7 @@ class PascalGrammar : public grammar::Grammar<PNode> {
     static std::function<PNode(PNode)> createNud(Operator op);
     static std::function<PNode(PNode)> createSignNud(char sign);
 
-    Symbol<PNode> *comma, *semicolon, *sign_eq;
+    Symbol<PNode> *comma, *semicolon, *sign_eq, *colon;
 
     public:
         PascalGrammar();

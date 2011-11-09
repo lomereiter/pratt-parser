@@ -47,6 +47,17 @@ void visit(const std::shared_ptr<CompoundStatementNode >&);
 void visit(const std::shared_ptr<WhileStatementNode >&);
 void visit(const std::shared_ptr<RepeatStatementNode >&);
 void visit(const std::shared_ptr<ForStatementNode >&);
+void visit(const std::shared_ptr<IfThenNode >&);
+void visit(const std::shared_ptr<IfThenElseNode >&);
+void visit(const std::shared_ptr<VariableNode >&);
+void visit(const std::shared_ptr<VariableListNode >&);
+void visit(const std::shared_ptr<WithStatementNode >&);
+void visit(const std::shared_ptr<ConstantListNode >&);
+void visit(const std::shared_ptr<CaseLimbNode >&);
+void visit(const std::shared_ptr<CaseLimbListNode >&);
+void visit(const std::shared_ptr<CaseStatementNode >&);
+void visit(const std::shared_ptr<ConstDefinitionNode >&);
+void visit(const std::shared_ptr<ConstSectionNode >&);
 private:
 int indent, sw;
 bool is_var_section;
