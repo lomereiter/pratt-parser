@@ -42,7 +42,7 @@ set (SOURCES
 
 set (CMAKE_CXX_COMPILER "g++-4.6")
 
-set (CMAKE_CXX_FLAGS "-std=c++0x -Os -Wall -pedantic -fno-rtti" )
+set (CMAKE_CXX_FLAGS "-std=c++0x -Os -Wall -pedantic" )
 
 add_executable (pp_gen pretty_printer_gen/pp_gen.cpp src/pascal_literals.cpp)
 

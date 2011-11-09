@@ -88,8 +88,8 @@ struct SubrangeTypeNode : public VisitableNode<SubrangeTypeNode> {
 };
 
 struct EnumeratedTypeNode : public VisitableNode<EnumeratedTypeNode> {
-    std::shared_ptr<IdentifierListNode> identifiers;
-    EnumeratedTypeNode(const std::shared_ptr<IdentifierListNode>& id_list) 
+    std::shared_ptr<Node> identifiers;
+    EnumeratedTypeNode(const std::shared_ptr<Node>& id_list) 
         : identifiers(id_list) {}
 };
 

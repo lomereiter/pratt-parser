@@ -99,11 +99,21 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
                 });
 
             PNode x = p.parse(0);
-            p.advance(")");
+            if (p.next_token_as_string() != ")")
+                throw SyntaxError("expected closing ')'");
+            else 
+                p.advance();
 
-            OpenBracketVisitor v;
-            v.travel(x);
-            return v.get_expression();
+            if (node_traits::is_convertible_to<ExpressionNode>(x)) 
+                return x;
+            
+            if (node_traits::has_type<IdentifierNode>(x))
+                return std::make_shared<EnumeratedTypeNode>(node::make_list(x));
+
+            if (node_traits::is_list_of<IdentifierNode>(x))
+                return std::make_shared<EnumeratedTypeNode>(x);
+
+            throw SyntaxError("expected expression or list of identifiers after '('");
     };
 
     comma= &infix_r(",", 80, [](PNode x, PNode y) -> PNode {

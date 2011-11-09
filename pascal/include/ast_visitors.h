@@ -9,9 +9,9 @@
 #endif 
 
 #include "syntax_error.h"
+#include "node.h"
 #include "node_traits.h"
 #include "visitor.h"
-#include "node.h"
 
 /* ConvertHelper is a strategy class used by ListVisitor.
    It determines whether to try to convert one type to another or not. */
@@ -103,34 +103,5 @@ private:
 
 template <typename T, int c, typename U> /* static member definition */
 ConvertHelper<T, c> ListVisitor<T, c, U>::convert_helper;
-
-typedef ListVisitor<VariableDeclNode> SemicolonVisitor;
-
-struct OpenBracketVisitor : public AstThrowVisitor {
-    using AstThrowVisitor::visit;
-
-    OpenBracketVisitor() { 
-        Visits< OpenBracketVisitor, 
-                OperationNode, NumberNode, StringNode, SignNode,
-                IdentifierNode, IdentifierListNode >();
-    }
-
-    void visit(const std::shared_ptr<OperationNode>& x) { expr = x; }
-    void visit(const std::shared_ptr<NumberNode>& x) { expr = x; }
-    void visit(const std::shared_ptr<StringNode>& x) { expr = x; }
-    void visit(const std::shared_ptr<SignNode>& x) { expr = x; }
-
-    void visit(const std::shared_ptr<IdentifierNode>& x) { 
-        expr = std::make_shared<EnumeratedTypeNode>(node::make_list(x));
-    }
-
-    void visit(const std::shared_ptr<IdentifierListNode>& x) {
-        expr = std::make_shared<EnumeratedTypeNode>(x);
-    }
-
-    std::shared_ptr<Node> get_expression() { return expr; }
-private:
-    std::shared_ptr<Node> expr;
-};
 
 #endif

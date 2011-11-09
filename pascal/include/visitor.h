@@ -125,7 +125,6 @@ namespace detail {
         /* constant Visitor */
         AstVisitor() : func() {}
         void visit(const std::shared_ptr<Node>&) { func(); }
-        virtual std::shared_ptr<Node> get_expression() { throw 0xBADF00D; }
 
         private:
             _DefaultBehaviour func;
