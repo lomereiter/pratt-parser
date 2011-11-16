@@ -2,12 +2,12 @@
 #define VISITOR_H
 
 #include <vector>
-#include <memory>
+//#include <memory>
 #include <type_traits>
 
 #include "node.h"
 #include "syntax_error.h"
-#include "node_tags.h"
+//#include "node_tags.h"
 
 namespace detail {
     /* VTable is created for each VisitorImpl class */

@@ -28,13 +28,21 @@ set (HEADERS
         include/pascal_grammar.h
         include/pretty_printer.h
         include/pascal_literals.h
+        include/pascal_handlers.h
         )
 
 set (SOURCES
+        src/templ_insts.cpp
         src/pascal_grammar.cpp
         src/pascal_literals.cpp
+        src/handlers/literals.cpp
+        src/handlers/operators.cpp
+        src/handlers/sections.cpp
+        src/handlers/types.cpp
+        src/handlers/expressions.cpp
+        src/node.cpp
         src/node_tags.cpp
-        src/templ_insts.cpp
+        src/node_traits.cpp
         src/pretty_printer.cpp
         src/test.cpp
         src/operator.cpp
@@ -42,7 +50,7 @@ set (SOURCES
 
 set (CMAKE_CXX_COMPILER "g++-4.6")
 
-set (CMAKE_CXX_FLAGS "-std=c++0x -Os -Wall -pedantic" )
+set (CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall -pedantic" )
 
 add_executable (pp_gen pretty_printer_gen/pp_gen.cpp src/pascal_literals.cpp)
 

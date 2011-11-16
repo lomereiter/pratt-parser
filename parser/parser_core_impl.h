@@ -1,11 +1,7 @@
 #ifndef PARSER_CORE_IMPL_H
 #define PARSER_CORE_IMPL_H
 
-#include "forward.h"
 #include "parser_core.h"
-
-#include <string>
-#include <memory>
 
 #ifdef DEBUG
 #include <iostream>
@@ -13,15 +9,15 @@
 
 template <typename T> 
 std::unique_ptr<Token<T>> PrattParser<T>::next() {
-    std::unique_ptr<Token<T>> tok = *curr;
-    ++curr;
+    std::unique_ptr<Token<T>> tok = *token_iter;
+    ++token_iter;
     return tok;
 }
 
 template <typename T>
 PrattParser<T>::PrattParser(const std::string& str, 
             const SymbolDict<T>& symbols) :
-     str(str), curr(str, symbols), token(next()) {
+     str(str), token_iter(str, symbols), token(next()) {
 }
    
 template <typename T>
@@ -46,7 +42,7 @@ T PrattParser<T>::parse(int rbp) {
 }
 
 template <typename T>
-const std::string PrattParser<T>::next_token_as_string() {
+const std::string PrattParser<T>::next_token_as_string() const {
     return str.substr(token -> start_position, token -> length);
 }
 
@@ -60,6 +56,20 @@ PrattParser<T>& PrattParser<T>::advance(const std::string& s) {
     }
     token = next();
     return *this;
+}
+
+template <typename T>
+SourcePosition PrattParser<T>::current_position() const {
+    SourcePosition sp;
+    sp.position = token->start_position;
+    sp.line = token_iter.current_line();
+    sp.column = sp.position - token_iter.last_new_line() + 1;
+    return sp;
+}
+
+template <typename T>
+const std::string& PrattParser<T>::code() const {
+    return str;
 }
 
 #endif

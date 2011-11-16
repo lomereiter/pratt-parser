@@ -1,12 +1,12 @@
 #ifndef NODE_TRAITS_H
 #define NODE_TRAITS_H
 
-#include <memory>
-#include <type_traits>
+//#include <memory>
+//#include <type_traits>
 
-#include "node.h"
+//#include "node.h"
 #include "visitor.h"
-#include "node_tags.h"
+//#include "node_tags.h"
 #include "utils.h"
 
 #ifdef DEBUG
@@ -28,8 +28,13 @@ namespace node_traits {
             bool has_trait;
         };
 
+        /** TraitsVisitor used to determine if particular pointer to a _Node instance
+         * points to some type from _ConvertibleTo list.
+         */
         template <typename _Node, typename... _ConvertibleTo>
         struct AreConvertibleTo : public TraitsVisitor {
+
+            /// Represents a list of convertible types which can be used with utils::append
             typedef type<_ConvertibleTo...> list;
 
             AreConvertibleTo() {
@@ -48,24 +53,10 @@ namespace node_traits {
             void visit(const std::shared_ptr<_NodeType>&) { has_trait = true; }
         };
 
+        /// Specialization used with utils::append
         template <typename _Node, typename... _ConvertibleTo>
-        struct AreConvertibleTo <_Node, type<_ConvertibleTo...> > : public TraitsVisitor {
-            typedef type<_ConvertibleTo...> list;
-            AreConvertibleTo() {
-                this->template Visits<AreConvertibleTo<_Node, _ConvertibleTo...>, _ConvertibleTo...>();
-            }
-           
-            template <typename _NodeType,
-                      typename = typename std::enable_if<std::is_same<_NodeType, Node>::value>::type,
-                      int dummy = 0>
-            void visit(const std::shared_ptr<_NodeType>&) { }
-
-            template <typename _NodeType,
-                      typename = typename std::enable_if<
-                          utils::belongs_to<_NodeType, _ConvertibleTo...>::value
-                          >::type>
-            void visit(const std::shared_ptr<_NodeType>&) { has_trait = true; }
-        };
+        struct AreConvertibleTo <_Node, type<_ConvertibleTo...>> : 
+        public AreConvertibleTo <_Node, _ConvertibleTo...> {};
 
    } // namespace visitors
 
@@ -87,12 +78,12 @@ namespace node_traits {
             RecordTypeNode, SetTypeNode, FileTypeNode, ArrayTypeNode> IsUST;
 
         typedef AreConvertibleTo< IndexTypeNode,
-            SubrangeTypeNode, EnumeratedTypeNode> IsIndexType;
+            SubrangeTypeNode, EnumeratedTypeNode, IdentifierNode> IsIndexType;
 
         typedef AreConvertibleTo< dummy_type,
             utils::append<  IsUST::list,
             utils::append<  IsIndexType::list,
-                IdentifierNode, PointerTypeNode, PackedTypeNode
+                PointerTypeNode, PackedTypeNode
                          >::list>::list> IsType;
 
         typedef AreConvertibleTo< VariableNode,
@@ -113,36 +104,14 @@ namespace node_traits {
                 IfThenNode, IfThenElseNode,
                 WithStatementNode, CaseStatementNode> IsStatement;
 
-        static bool __is_convertible_helper(type<ExpressionNode>, const std::shared_ptr<Node>& node) {
-            static IsExpr is_expr;
-            return is_expr(node);
-        }
-        
-        static bool __is_convertible_helper(type<VariableNode>, const std::shared_ptr<Node>& node) {
-            static IsVar is_var;
-            return is_var(node);
-        }
-
-        static bool __is_convertible_helper(type<IndexTypeNode>, const std::shared_ptr<Node>& node) {
-            static IsIndexType is_index_type_node;
-            return is_index_type_node(node);
-        }
-
-        static bool __is_convertible_helper(type<StatementNode>, const std::shared_ptr<Node>& node) {
-            static IsStatement is_statement;
-            return is_statement(node);
-        }
-
-        static bool __is_convertible_helper(type<ConstantNode>, const std::shared_ptr<Node>& node) {
-            static AreConvertibleTo<ConstantNode,
-                StringNode, NumberNode, IdentifierNode> is_surely_constant;
-            return is_surely_constant(node) ||
-                   ( has_type<SignNode>(node) &&
-                     is_surely_constant(std::static_pointer_cast<SignNode>(node) -> child) );
-        }
+        bool __is_convertible_helper(type<ExpressionNode>, const std::shared_ptr<Node>&);
+        bool __is_convertible_helper(type<VariableNode>, const std::shared_ptr<Node>&);
+        bool __is_convertible_helper(type<IndexTypeNode>, const std::shared_ptr<Node>&);
+        bool __is_convertible_helper(type<StatementNode>, const std::shared_ptr<Node>&);
+        bool __is_convertible_helper(type<ConstantNode>, const std::shared_ptr<Node>&);
 
         template <typename _Node>
-        static bool __is_convertible_helper(type<_Node>, const std::shared_ptr<Node>& node) { 
+        bool __is_convertible_helper(type<_Node>, const std::shared_ptr<Node>&) { 
             return false;
         }
 
@@ -184,6 +153,9 @@ namespace node {
         return std::make_shared<typename node_traits::list_of<T>::type>(node);
     }
 
+    /** If node runtime type is T returns std::static_pointer_cast to T.
+     * Otherwise, calls constructor of T taking node as its argument.
+     */
     template <typename T>
     std::shared_ptr<T> convert_to(const std::shared_ptr<Node>& node) {
         if (node_traits::has_type<T>(node))

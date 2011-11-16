@@ -1,12 +1,8 @@
 #ifndef PARSER_SYMBOL_IMPL_H
 #define PARSER_SYMBOL_IMPL_H
 
-#include "forward.h"
 #include "symbol.h"
 
-#include <functional>
-#include <string>
-#include <map>
 #include <limits>
 template <typename T>
 Symbol<T>::Symbol(std::string id, int lbp) : id(id), lbp(lbp) {}

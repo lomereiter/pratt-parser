@@ -1,12 +1,8 @@
 #ifndef PARSER_TOKEN_IMPL_H
 #define PARSER_TOKEN_IMPL_H
 
-#include "forward.h"
 #include "token.h"
 
-#include <string>
-#include <functional>
-#include <memory>
 #include <locale>
 
 template <typename T>
@@ -48,15 +44,20 @@ bool Token<T>::iterator::is_white_space(char c) {
 template <typename T>
 Token<T>::iterator::iterator(const std::string& s, 
          const SymbolDict<T>& symbols) :
-    str(s), symbols(symbols), start(0), end(0) {
+    str(s), symbols(symbols), start(0), end(0),
+    last_new_line_(0), current_line_(1) {
         operator++();
 }
 
 template <typename T>
 typename Token<T>::iterator& Token<T>::iterator::operator++() {
-    while (start < str.length() &&
-           is_white_space(str[start]))
+    while (start < str.length() && is_white_space(str[start])) {
+        if (str[start] == '\n') {
+            last_new_line_ = start;
+            ++current_line_;
+        }
         ++start;
+    }
 
     if (start < str.length()) {
         end = start;
@@ -95,6 +96,12 @@ std::unique_ptr<Token<T>> Token<T>::iterator::operator*() {
         return std::unique_ptr<Token<T>>(new Token<T>(*match, old_start, end));
     }
 }
+
+template <typename T>
+size_t Token<T>::iterator::last_new_line() const { return last_new_line_; }
+
+template <typename T>
+size_t Token<T>::iterator::current_line() const { return current_line_; }
 
 template <typename T>
 LiteralToken<T>::LiteralToken(const Symbol<T>& sym, T val, size_t start, size_t end) :

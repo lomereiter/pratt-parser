@@ -6,10 +6,16 @@
 #include <string>
 #include <memory>
 
+struct SourcePosition {
+    size_t position;
+    size_t line;
+    size_t column;
+};
+
 template <typename T>
 class PrattParser {
         const std::string& str;
-        typename Token<T>::iterator curr;
+        typename Token<T>::iterator token_iter;
         std::unique_ptr<Token<T>> token;
         std::unique_ptr<Token<T>> next();
 
@@ -17,9 +23,13 @@ class PrattParser {
         PrattParser(const std::string&, const SymbolDict<T>&);
        
         T parse(int rbp = 0);
-        const std::string next_token_as_string();
+        const std::string next_token_as_string() const;
         PrattParser<T>& advance();
         PrattParser<T>& advance(const std::string& s);
+
+        SourcePosition current_position() const;
+        
+        const std::string& code() const;
 };
 
 #endif

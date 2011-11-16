@@ -62,13 +62,30 @@ namespace grammar {
                 Symbol<T>& sym;
             };
 
-            struct lbp_guard {
-                lbp_guard(Symbol<T>&, int);
-                ~lbp_guard();
-            private:
-                Symbol<T>& sym;
-                int old_lbp;
-            };
+#define __DECLARE_GRAMMAR_GUARD__(__field_name, __field_type) \
+            struct __field_name##_guard { \
+                __field_name##_guard(Symbol<T>&, __field_type); \
+                ~__field_name##_guard(); \
+            private: \
+                Symbol<T>& sym; \
+                __field_type old_##__field_name; \
+            }
+
+#define __DEFINE_GRAMMAR_GUARD__(__field_name, __field_type) \
+template <typename T> \
+Grammar<T>::__field_name##_guard::__field_name##_guard(Symbol<T>& s, __field_type f) : \
+            sym(s), old_##__field_name(s.__field_name) { \
+    sym.__field_name = f; \
+} \
+\
+template <typename T> \
+Grammar<T>::__field_name##_guard::~__field_name##_guard() { \
+    sym.__field_name = old_##__field_name; \
+}
+
+            __DECLARE_GRAMMAR_GUARD__(lbp, int);
+            __DECLARE_GRAMMAR_GUARD__(nud, typename Prefix::func_type);
+            __DECLARE_GRAMMAR_GUARD__(led, typename LeftAssociative::func_type);
 
         private:
             static void set_behaviour_helper
@@ -87,13 +104,13 @@ namespace grammar {
                 (RightAssociative, Symbol<T>& sym, std::function<T(T, T)> f, int rbp);
 
             template <typename _Func>
-            static const _Func get_handler(const Symbol<T>& sym);
+            static _Func&& get_handler(Symbol<T>& sym);
 
-            static const std::function<T(PrattParser<T>&)> get_handler_helper
-                (type<std::function<T(PrattParser<T>&)>>, const Symbol<T>& sym);
+            static std::function<T(PrattParser<T>&)>&& get_handler_helper
+                (type<std::function<T(PrattParser<T>&)>>, Symbol<T>& sym);
 
-            static const std::function<T(PrattParser<T>&, T)> get_handler_helper
-                (type<std::function<T(PrattParser<T>&, T)>>, const Symbol<T>& sym);
+            static std::function<T(PrattParser<T>&, T)>&& get_handler_helper
+                (type<std::function<T(PrattParser<T>&, T)>>, Symbol<T>& sym);
 
             template <typename _Func>
             static void restore_behaviour(Symbol<T>& sym, _Func& f);

@@ -2,6 +2,7 @@
 #define PARSER_GRAMMAR_IMPL_H
 
 #include "grammar.h"
+#include <utility>
 
 #ifdef DEBUG
 #include <iostream>
@@ -147,37 +148,25 @@ Grammar<T>::behaviour_guard<_Semantics>::~behaviour_guard() {
     restore_behaviour<typename _Semantics::func_type>(sym, old_func);
 }
 
-template <typename T>
-Grammar<T>::lbp_guard::lbp_guard(Symbol<T>& sym, int lbp) : sym(sym), old_lbp(sym.lbp) {
-#ifdef DEBUG
-    std::cout << "Lbp guard construction... lbp = " << lbp << std::endl;
-#endif
-    sym.lbp = lbp;
-}
-
-template <typename T>
-Grammar<T>::lbp_guard::~lbp_guard() { 
-#ifdef DEBUG
-    std::cout << "Lbp guard destruction... old_lbp = " << old_lbp << std::endl;
-#endif
-    sym.lbp = old_lbp; 
-}
+__DEFINE_GRAMMAR_GUARD__(lbp, int)
+__DEFINE_GRAMMAR_GUARD__(nud, typename Prefix::func_type)
+__DEFINE_GRAMMAR_GUARD__(led, typename LeftAssociative::func_type)
 
 /************************ helper functions *****************************/
 
-template <typename T> template <typename _Func> const _Func 
-Grammar<T>::get_handler(const Symbol<T>& sym) {
+template <typename T> template <typename _Func> _Func&&
+Grammar<T>::get_handler(Symbol<T>& sym) {
     return get_handler_helper(type<_Func>(), sym); }
 
-template <typename T> const std::function<T(PrattParser<T>&)> 
+template <typename T> std::function<T(PrattParser<T>&)>&&
 Grammar<T>::get_handler_helper
-    (type<std::function<T(PrattParser<T>&)>>, const Symbol<T>& sym) {
-         return sym.nud; }
+    (type<std::function<T(PrattParser<T>&)>>, Symbol<T>& sym) {
+         return std::move(sym.nud); }
 
-template <typename T> const std::function<T(PrattParser<T>&, T)> 
+template <typename T> std::function<T(PrattParser<T>&, T)>&&
 Grammar<T>::get_handler_helper
-    (type<std::function<T(PrattParser<T>&, T)>>, const Symbol<T>& sym) {
-         return sym.led; }
+    (type<std::function<T(PrattParser<T>&, T)>>, Symbol<T>& sym) {
+         return std::move(sym.led); }
 
 /***********************************************************************/
 
@@ -190,13 +179,13 @@ template <typename T> void
 Grammar<T>::restore_behaviour_helper
     (type<std::function<T(PrattParser<T>&)>>, Symbol<T>& sym, 
           std::function<T(PrattParser<T>&)>& f) {
-               sym.nud = f; }
+               sym.nud = std::move(f); }
 
 template <typename T> void 
 Grammar<T>::restore_behaviour_helper
     (type<std::function<T(PrattParser<T>&, T)>>, Symbol<T>& sym, 
           std::function<T(PrattParser<T>&, T)>& f) {
-               sym.led = f; }
+               sym.led = std::move(f); }
 
 /**********************************************************************/
 
