@@ -40,6 +40,7 @@ set (SOURCES
         src/handlers/sections.cpp
         src/handlers/types.cpp
         src/handlers/expressions.cpp
+        src/handlers/statements.cpp
         src/node.cpp
         src/node_tags.cpp
         src/node_traits.cpp

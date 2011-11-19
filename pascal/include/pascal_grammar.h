@@ -20,6 +20,7 @@ class PascalGrammar : public grammar::Grammar<PNode> {
     friend void pascal_grammar::add_expressions(PascalGrammar&);
     friend void pascal_grammar::add_types(PascalGrammar&);
     friend void pascal_grammar::add_sections(PascalGrammar&);
+    friend void pascal_grammar::add_statements(PascalGrammar&);
 
     Symbol<PNode> *comma, *semicolon, *sign_eq, 
                   *colon, *opening_bracket, *end;

@@ -26,7 +26,7 @@ T PrattParser<T>::parse(int rbp) {
     token = next();
 #ifdef DEBUG
     std::cout << "Calling nud of " << t -> id();
-    std::cout << " (t.lbp = " << t -> lbp() << ", rbp = " << rbp << ")" << std::endl;
+    std::cout << " (token.lbp = " << token -> lbp() << ", rbp = " << rbp << ")" << std::endl;
 #endif
     T left = t -> nud(*this); /* value for terminals, result of func. call otherwise */
     while (rbp < token -> lbp()) {
@@ -34,7 +34,7 @@ T PrattParser<T>::parse(int rbp) {
         token = next();
 #ifdef DEBUG
         std::cout << "Calling led of " << t -> id();
-        std::cout << " (t.lbp = " << t -> lbp() << ", rbp = " << rbp << ")" << std::endl;
+        std::cout << " (token.lbp = " << token -> lbp() << ", rbp = " << rbp << ")" << std::endl;
 #endif
         left = t -> led(*this, left);
     }
