@@ -55,7 +55,8 @@ namespace pascal_grammar {
         g.infix(">", 50, createLed(opMore));      g.infix(">=", 50, createLed(opMoreEq));
 
                             /* sign operators */
-        g.prefix("+", 150, createSignNud('+'));   g.prefix("-", 150, createSignNud('-'));
+        g.prefix("+", 150, createSignNud('+'), grammar::keep_symbol_lbp);   
+        g.prefix("-", 150, createSignNud('-'), grammar::keep_symbol_lbp);
         /* </operators> */
 
         g.add_symbol_to_dict(")", 0);

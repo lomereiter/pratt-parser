@@ -8,6 +8,9 @@
 
 namespace grammar {
 
+    struct keep_symbol_lbp_t {};
+    constexpr keep_symbol_lbp_t keep_symbol_lbp {};
+
     template <typename T>
     class Grammar {
         public:
@@ -16,6 +19,7 @@ namespace grammar {
 
             Symbol<T>& add_symbol_to_dict(const std::string& sym, int lbp=0);
             Symbol<T>& prefix(const std::string&, int, std::function<T(T)>);
+            Symbol<T>& prefix(const std::string&, int, std::function<T(T)>, keep_symbol_lbp_t);
             Symbol<T>& postfix(const std::string&, int, std::function<T(T)>);
             Symbol<T>& infix(const std::string&, int, std::function<T(T, T)>);
             Symbol<T>& infix_r(const std::string&, int, std::function<T(T, T)>);

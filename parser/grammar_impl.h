@@ -39,6 +39,14 @@ Symbol<T>& Grammar<T>::add_symbol_to_dict(const std::string& sym, int lbp) {
 template <typename T>
 Symbol<T>& Grammar<T>::prefix(const std::string& op, int binding_power, 
         std::function<T(T)> selector) {
+    Symbol<T>& sym = add_symbol_to_dict(op, binding_power); 
+    set_behaviour<Prefix>(sym, binding_power, selector);
+    return sym;
+}
+
+template <typename T>
+Symbol<T>& Grammar<T>::prefix(const std::string& op, int binding_power, 
+        std::function<T(T)> selector, grammar::keep_symbol_lbp_t) {
     Symbol<T>& sym = add_symbol_to_dict(op); 
     set_behaviour<Prefix>(sym, binding_power, selector);
     return sym;
