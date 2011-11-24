@@ -22,11 +22,8 @@ namespace pascal_grammar {
 
             if (!node_traits::is_list_of<ExpressionNode>(elements))
                 g.error("expected list of expressions after '['");
-           
-            if (p.next_token_as_string() != "]") 
-                g.error("expected ']' after list of expressions");
-            p.advance();
 
+            g.advance("]", "expected ']' after list of expressions");
             return elements;
         };
 
@@ -77,9 +74,7 @@ namespace pascal_grammar {
                 PNode params = p.parse(0);
                 if (!node_traits::is_list_of<ExpressionNode>(params))
                     g.error("expected list of parameters after '(' token");
-                if (p.next_token_as_string() != ")")
-                    g.error("expected ')' token after the list of parameters");
-                p.advance();
+                g.advance(")", "expected ')' token after the list of parameters");
                 return std::make_shared<FunctionDesignatorNode>(left, params);
             };
     }

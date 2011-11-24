@@ -7,8 +7,6 @@
  *
  * proc/func definitions
  * -------------------------------------------------------------------
- * incapsulate if (p.next_token...) ... p.advance()
- *
  * use unique_ptrs instead of shared_ptr ???
  *
  * error handling in OperationNode
@@ -33,9 +31,7 @@ namespace pascal_grammar {
 
                     if (!node_traits::has_type<IdentifierNode>(right))
                         g.error("expected identifier after '..'");
-                    if (p.next_token_as_string() != ":")
-                        g.error("expected ':' in bound specification");
-                    p.advance();
+                    g.advance(":", "expected ':' in bound specification");
                     
                     PNode type = p.parse(1); // semicolon ~ 1
 
@@ -60,9 +56,7 @@ PNode parse_formal_parameter_list(PrattParser<PNode>& p, PascalGrammar& g) {
 
     PascalGrammar::nud_guard array_guard(*(g.array), 
         [&g](PrattParser<PNode>& p) -> PNode {
-            if (p.next_token_as_string() != "[")
-                g.error("expected '[' after 'array'");
-            p.advance();
+            g.advance("[", "expected '[' after 'array'");
            
             pascal_grammar::detail::bound_specification_guard bg(g);
 
@@ -71,13 +65,8 @@ PNode parse_formal_parameter_list(PrattParser<PNode>& p, PascalGrammar& g) {
             if (!node_traits::is_list_of<BoundSpecificationNode>(bounds))
                 g.error("expected list of bound specifications after 'array ['");
 
-            if (p.next_token_as_string() != "]")
-                g.error("expected ']' in array parameter type declaration");
-            p.advance();
-
-            if (p.next_token_as_string() != "of")
-                g.error("expected 'of' after ']'");
-            p.advance();
+            g.advance("]", "expected ']' in array parameter type declaration");
+            g.advance("of", "expected 'of' after ']'");
 
             PNode type = p.parse(1); // parsing stops before semicolon
             if (!node_traits::has_type<IdentifierNode>(type) &&
@@ -89,28 +78,18 @@ PNode parse_formal_parameter_list(PrattParser<PNode>& p, PascalGrammar& g) {
 
     PascalGrammar::nud_guard packed_guard(*(g.packed),
         [&g](PrattParser<PNode>& p) -> PNode {
+            g.advance("array", "expected 'array' after 'packed'");
 
             pascal_grammar::detail::bound_specification_guard bg(g);
 
-            if (p.next_token_as_string() != "array")
-                g.error("expected 'array' after 'packed'");
-            p.advance();
-
-            if (p.next_token_as_string() != "[")
-                g.error("expected '[' after 'packed array'");
-            p.advance();
+            g.advance("[", "expected '[' after 'packed array'");
 
             PNode bounds = p.parse(0);
             if (!node_traits::has_type<BoundSpecificationNode>(bounds))
                 g.error("expected bound specification after 'packed array ['");
 
-            if (p.next_token_as_string() != "]")
-                g.error("expected ']' after bound specification");
-            p.advance();
-
-            if (p.next_token_as_string() != "of")
-                g.error("expected 'of' after ']'");
-            p.advance();
+            g.advance("]", "expected ']' after bound specification");
+            g.advance("of", "expected 'of' after ']'");
             
             PNode id = p.parse(1); // see array_guard
 
@@ -128,9 +107,7 @@ PNode parse_formal_parameter_list(PrattParser<PNode>& p, PascalGrammar& g) {
             if (!node_traits::is_list_of<IdentifierNode>(id_list))
                 g.error("expected list of identifiers before ':'");
 
-            if (p.next_token_as_string() != ":")
-                g.error("expected ':' after identifier list");
-            p.advance();
+            g.advance(":", "expected ':' after identifier list");
 
             PNode param_type = p.parse(1); // stop before semicolon
             if (!node_traits::is_parameter_type(param_type))
@@ -194,11 +171,7 @@ namespace pascal_grammar {
               } else {
                   p.advance();
                   PNode params = pascal_grammar::detail::parse_formal_parameter_list(p, g);
-
-                  if (p.next_token_as_string() != ")")
-                      g.error("expected ')' after formal parameter list");
-                  p.advance();
-                  
+                  g.advance(")", "expected ')' after formal parameter list");
                   return std::make_shared<ProcedureHeadingNode>(name, params);
               }
          };
@@ -225,20 +198,13 @@ namespace pascal_grammar {
               PNode params = std::make_shared<ParameterListNode>();
               auto next = p.next_token_as_string();
               if (next != "(") {
-                  if (next != ":")
-                      g.error("expected return type identifier");
-                  p.advance();
+                  g.advance(":", "expected ':' in function heading");
               } else {
                   p.advance();
                   params = pascal_grammar::detail::parse_formal_parameter_list(p, g);
 
-                  if (p.next_token_as_string() != ")")
-                      g.error("expected ')' after formal parameter list");
-                  p.advance();
-                 
-                  if (p.next_token_as_string() != ":")
-                      g.error("expected ':' in function heading");
-                  p.advance();
+                  g.advance(")", "expected ')' after formal parameter list");
+                  g.advance(":", "expected ':' in function heading");
               }
 
               PNode ret = p.parse(1);

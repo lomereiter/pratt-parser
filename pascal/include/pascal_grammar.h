@@ -52,6 +52,7 @@ class PascalGrammar : public grammar::Grammar<PNode> {
     public:
         static PNode parse(const std::string&);
         void error(const std::string&) const;
+        void advance(const std::string&, const std::string&);
 };
 
 #endif

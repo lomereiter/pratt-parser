@@ -53,3 +53,9 @@ void PascalGrammar::error(const std::string& description) const {
     error_desc << "...";
     throw SyntaxError(error_desc.str());
 }
+
+void PascalGrammar::advance(const std::string& expected, const std::string& desc) {
+    if (parser -> next_token_as_string() != expected)
+        error(desc);
+    parser -> advance();
+}

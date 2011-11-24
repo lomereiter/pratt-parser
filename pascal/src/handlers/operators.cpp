@@ -64,10 +64,7 @@ namespace pascal_grammar {
         (g.opening_bracket = &g.add_symbol_to_dict("(", std::numeric_limits<int>::max()))
         -> nud = [&g](PrattParser<PNode>& p) -> PNode {
                 PNode x = p.parse(0);
-                if (p.next_token_as_string() != ")")
-                    g.error("expected closing ')'");
-                else 
-                    p.advance();
+                g.advance(")", "expected closing ')'");
 
                 if (!node_traits::is_convertible_to<ExpressionNode>(x)) 
                     g.error("expected expression after '('");

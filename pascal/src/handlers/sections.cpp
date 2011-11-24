@@ -20,10 +20,7 @@ namespace pascal_grammar {
                 });
            
             PNode x = p.parse(0);
-            if (p.next_token_as_string() != ")")
-                g.error("expected closing ')'");
-            else
-                p.advance();
+            g.advance(")", "expected closing ')'");
 
             if (!node_traits::is_list_of<IdentifierNode>(x))
                 g.error("expected list of identifiers");
@@ -62,10 +59,7 @@ namespace pascal_grammar {
                     g.error("expected variable declaration");
                 variable_declarations.push_front(x);
 
-                if (p.next_token_as_string() != ";") 
-                    g.error("expected ';' after variable declaration");
-                else
-                    p.advance();
+                g.advance(";", "expected ';' after variable declaration");
 
                 std::string next = p.next_token_as_string();
                 if (next == "begin" || next == "procedure" || next == "function" ||
@@ -96,19 +90,13 @@ namespace pascal_grammar {
                 if (!node_traits::has_type<IdentifierNode>(id))
                     g.error("expected identifier as a type name");
 
-                if (p.next_token_as_string() != "=") 
-                    g.error("expected '=' after type name");
-                else
-                    p.advance();
+                g.advance("=", "expected '=' after type name");
 
                 PNode type = p.parse(1);
                 if (!node_traits::is_type(type))
                     g.error("expected type definition after '='");
                 
-                if (p.next_token_as_string() != ";")
-                    g.error("expected ';' after type definition");
-                else
-                    p.advance();
+                g.advance(";", "expected ';' after type definition");
 
                 type_definitions.push_front(std::make_shared<TypeDefinitionNode>(id, type));
                 std::string next = p.next_token_as_string();
@@ -134,10 +122,8 @@ namespace pascal_grammar {
 
                 if (!node_traits::has_type<IdentifierNode>(id))
                     g.error("expected identifier in constant definition");
-                if (p.next_token_as_string() != "=")
-                    g.error("expected '=' after identifier");
 
-                p.advance();
+                g.advance("=", "expected '=' after identifier");
 
                 PNode constant = p.parse(0);
 
@@ -149,10 +135,7 @@ namespace pascal_grammar {
                 const_defs.push_front(
                         std::make_shared<ConstDefinitionNode>(id, constant));
 
-                if (p.next_token_as_string() != ";")
-                    g.error("expected ';' after constant definition");
-                else
-                    p.advance();
+                g.advance(";", "expected ';' after constant definition");
 
                 std::string next = p.next_token_as_string();
                 if (next == "begin" || next == "procedure" || next == "function" ||

@@ -32,9 +32,7 @@ namespace pascal_grammar {
             PNode statements = p.parse(0);
             if (!node_traits::is_list_of<StatementNode>(statements))
                 g.error("expected statement-sequence after 'begin'");
-            if (p.next_token_as_string() != "end") 
-                g.error("expected 'end' after statement-sequence");
-            p.advance();
+            g.advance("end", "expected 'end' after statement-sequence");
             return std::make_shared<CompoundStatementNode>(statements);
         };
 
@@ -44,9 +42,7 @@ namespace pascal_grammar {
             PNode condition = p.parse(0);
             if (!node_traits::is_convertible_to<ExpressionNode>(condition))
                 g.error("expected expression after 'while'");
-            if (p.next_token_as_string() != "do")
-                g.error("expected 'do' after expression");
-            p.advance();
+            g.advance("do", "expected 'do' after expression");
             PNode body = p.parse(1);
             if (!node_traits::is_convertible_to<StatementNode>(body))
                 g.error("expected statement-sequence after 'do'");
@@ -59,9 +55,7 @@ namespace pascal_grammar {
             PNode body = p.parse(1);
             if (!node_traits::is_list_of<StatementNode>(body))
                 g.error("expected statement-sequence after 'repeat'");
-            if (p.next_token_as_string() != "until")
-                g.error("expected 'until' after statement-sequence");
-            p.advance();
+            g.advance("until", "expected 'until' after statement-sequence");
             PNode condition = p.parse(0);
             if (!node_traits::is_convertible_to<ExpressionNode>(condition))
                 g.error("expected expression after 'until'");
@@ -94,9 +88,7 @@ namespace pascal_grammar {
                 msg = msg + '\'' + next + '\'';
                 g.error(std::move(msg));
             }
-            if (p.next_token_as_string() != "do")
-                g.error("expected 'do' after final-expression");
-            p.advance();
+            g.advance("do", "expected 'do' after final-expression");
             PNode body = p.parse(1);
             if (!node_traits::is_convertible_to<StatementNode>(body))
                 g.error("expected statement after 'do'");
@@ -110,9 +102,7 @@ namespace pascal_grammar {
             PNode expr = p.parse(1);
             if (!node_traits::is_convertible_to<ExpressionNode>(expr))
                 g.error("expected expression after 'if'");
-            if (p.next_token_as_string() != "then")
-                g.error("expected 'then'");
-            p.advance();
+            g.advance("then", "expected 'then'");
             PNode st = p.parse(1);
             if (!node_traits::is_convertible_to<StatementNode>(st))
                 g.error("expected statement after 'then'");
@@ -138,9 +128,7 @@ namespace pascal_grammar {
             PNode list = p.parse(0);
             if (!node_traits::is_list_of<VariableNode>(list))
                 g.error("expected list of record variables after 'with'");
-            if (p.next_token_as_string() != "do")
-                g.error("expected 'do' in with-statement");
-            p.advance();
+            g.advance("do", "expected 'do' in with-statement");
             PNode st = p.parse(1);
             if (!node_traits::is_convertible_to<StatementNode>(st))
                 g.error("expected statement after 'do'");
@@ -152,10 +140,7 @@ namespace pascal_grammar {
             PNode expr = p.parse(0);
             if (!node_traits::is_convertible_to<ExpressionNode>(expr))
                 g.error("expected expression after 'case'");
-            if (p.next_token_as_string() != "of")
-                g.error("expected 'of' after expression");
-
-            p.advance();
+            g.advance("of", "expected 'of' after expression");
 
             PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma),
                 [&g](PNode left, PNode right) {

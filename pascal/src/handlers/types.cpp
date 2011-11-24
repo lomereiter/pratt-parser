@@ -56,8 +56,8 @@ namespace pascal_grammar {
                         p.advance();
                         next = p.next_token_as_string();
                         if (variable_declarations.empty()) {
-                            p.advance("end"); // either ';' follows field declaration
-                            break;            // or ';' is followed by 'end'
+                            g.advance("end", "expected 'end'"); 
+                            break;            
                         }
                     }
                     if (next == "end") {
@@ -96,9 +96,7 @@ namespace pascal_grammar {
                                .get_expression();
                     });
 
-                if (p.next_token_as_string() != "[")
-                    g.error("expected '[' after 'array'");
-                p.advance();
+                g.advance("[", "expected '[' after 'array'");
 
                 bounds = p.parse(10);
                 if (node_traits::is_convertible_to<IndexTypeNode>(bounds))
@@ -106,13 +104,9 @@ namespace pascal_grammar {
                 if (!node_traits::is_list_of<IndexTypeNode>(bounds))
                     g.error("expected list of index types");
             }
-            if (p.next_token_as_string() != "]")
-                g.error("expected ']' in array type definition");
-            p.advance();
 
-            if (p.next_token_as_string() != "of")
-                g.error("expected 'of' in array type definition");
-            p.advance();
+            g.advance("]", "expected ']' in array type definition");
+            g.advance("of", "expected 'of' in array type definition");
 
             PNode type = p.parse(1);
             if (!node_traits::is_type(type)) 
