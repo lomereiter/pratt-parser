@@ -65,11 +65,25 @@ struct VariableNode;
 typedef ListOf<VariableNode> VariableListNode;
 
 struct WithStatementNode;
+
+struct CaseStatementNode;
 struct CaseLimbNode;
 typedef ListOf<CaseLimbNode> CaseLimbListNode;
-struct CaseStatementNode;
 
 struct ConstDefinitionNode;
 typedef ListOf<ConstDefinitionNode> ConstSectionNode;
+
+struct BoundSpecificationNode;
+typedef ListOf<BoundSpecificationNode> BoundSpecificationListNode;
+
+struct UCArraySchemaNode;
+struct PCArraySchemaNode;
+struct VariableParameterNode;
+struct ValueParameterNode;
+struct ProcedureHeadingNode;
+struct FunctionHeadingNode;
+
+struct ParameterNode;
+typedef ListOf<ParameterNode> ParameterListNode;
 
 #endif

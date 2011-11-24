@@ -15,106 +15,113 @@ OperationNode::OperationNode(int arity, Operator op) : _arity(arity), _op(op) {}
 int OperationNode::arity() { return _arity; }
 int OperationNode::op() { return _op; }
 
-SignNode::SignNode(char sign, const std::shared_ptr<Node>& child) : 
+SignNode::SignNode(char sign, const PNode& child) : 
     child(child), _sign(sign) {}
 char SignNode::sign() { return _sign; }
 
 NumberNode::NumberNode(std::string val) : value(val) {}
 IdentifierNode::IdentifierNode(std::string s) : name(s) {}
 StringNode::StringNode(std::string s) : str(s) {}
-ConstantNode::ConstantNode(const std::shared_ptr<Node>& node) : child(node) {}
+ConstantNode::ConstantNode(const PNode& node) : child(node) {}
 
-SubrangeTypeNode::SubrangeTypeNode(const std::shared_ptr<ConstantNode>& lb, 
-                     const std::shared_ptr<ConstantNode>& ub) : 
+SubrangeTypeNode::SubrangeTypeNode(const PNode& lb, const PNode& ub) : 
         lower_bound(lb), upper_bound(ub) {}
 
-EnumeratedTypeNode::EnumeratedTypeNode(const std::shared_ptr<Node>& id_list) 
+EnumeratedTypeNode::EnumeratedTypeNode(const PNode& id_list) 
         : identifiers(id_list) {}
 
-VariableDeclNode::VariableDeclNode(const std::shared_ptr<Node>& id_list, 
-                     const std::shared_ptr<Node>& type) :
+VariableDeclNode::VariableDeclNode(const PNode& id_list, const PNode& type) :
         id_list(id_list), type(type) {}
 
-RecordTypeNode::RecordTypeNode(const std::shared_ptr<Node>& node) : child(node) {}
-SetTypeNode::SetTypeNode(const std::shared_ptr<Node>& type) : type(type) {}
-FileTypeNode::FileTypeNode(const std::shared_ptr<Node>& type) : type(type) {}
-PointerTypeNode::PointerTypeNode(const std::shared_ptr<Node>& type) : type(type) {}
-IndexTypeNode::IndexTypeNode(const std::shared_ptr<Node>& node) : type(node) {}
+RecordTypeNode::RecordTypeNode(const PNode& node) : child(node) {}
+SetTypeNode::SetTypeNode(const PNode& type) : type(type) {}
+FileTypeNode::FileTypeNode(const PNode& type) : type(type) {}
+PointerTypeNode::PointerTypeNode(const PNode& type) : type(type) {}
+IndexTypeNode::IndexTypeNode(const PNode& node) : type(node) {}
 
-ArrayTypeNode::ArrayTypeNode(const std::shared_ptr<Node>& list,
-                             const std::shared_ptr<Node>& type) :
+ArrayTypeNode::ArrayTypeNode(const PNode& list, const PNode& type) :
             index_type_list(list), type(type) {}
 
-VariableSectionNode::VariableSectionNode(const std::shared_ptr<Node>& decls) 
+VariableSectionNode::VariableSectionNode(const PNode& decls) 
         : declarations(decls) {}
 
-TypeDefinitionNode::TypeDefinitionNode(const std::shared_ptr<Node>& name, 
-                                       const std::shared_ptr<Node>& type) :
+TypeDefinitionNode::TypeDefinitionNode(const PNode& name, const PNode& type) :
         name(name), type(type) {}
 
-PackedTypeNode::PackedTypeNode(const std::shared_ptr<Node>& type) : type(type) {}
-DeclarationNode::DeclarationNode(const std::shared_ptr<Node>& child) : child(child) {}
-ExpressionNode::ExpressionNode(const std::shared_ptr<Node>& child) : child(child) {}
-SetNode::SetNode(const std::shared_ptr<Node>& elems) : elements(elems) {}
+PackedTypeNode::PackedTypeNode(const PNode& type) : type(type) {}
+DeclarationNode::DeclarationNode(const PNode& child) : child(child) {}
+ExpressionNode::ExpressionNode(const PNode& child) : child(child) {}
+SetNode::SetNode(const PNode& elems) : elements(elems) {}
 
-IndexedVariableNode::IndexedVariableNode(const std::shared_ptr<Node>& array_var,
-                        const std::shared_ptr<Node>& indices) :
+IndexedVariableNode::IndexedVariableNode(const PNode& array_var, const PNode& indices) :
         array_variable(array_var), indices(indices) {}
 
-ReferencedVariableNode::ReferencedVariableNode(const std::shared_ptr<Node>& var)
-        : variable(var) {}
+ReferencedVariableNode::ReferencedVariableNode(const PNode& var) : 
+        variable(var) {}
 
-FieldDesignatorNode::FieldDesignatorNode(const std::shared_ptr<Node>& var,
-                                         const std::shared_ptr<Node>& field) : 
+FieldDesignatorNode::FieldDesignatorNode(const PNode& var, const PNode& field) : 
         variable(var), field(field) {}
 
-FunctionDesignatorNode::FunctionDesignatorNode(const std::shared_ptr<Node>& func,
-                                               const std::shared_ptr<Node>& params) :
+FunctionDesignatorNode::FunctionDesignatorNode(const PNode& func, const PNode& params) :
         function(func), parameters(params) {}
 
-AssignmentStatementNode::AssignmentStatementNode(const std::shared_ptr<Node>& var,
-                                                 const std::shared_ptr<Node>& expr) :
+AssignmentStatementNode::AssignmentStatementNode(const PNode& var, const PNode& expr) :
         variable(var), expression(expr) {}
 
-StatementNode::StatementNode(const std::shared_ptr<Node>& child) : child(child) {}
-CompoundStatementNode::CompoundStatementNode(const std::shared_ptr<Node>& child) : child(child) {}
+StatementNode::StatementNode(const PNode& child) : child(child) {}
 
-WhileStatementNode::WhileStatementNode(const std::shared_ptr<Node>& cond,
-                                       const std::shared_ptr<Node>& body) : 
+CompoundStatementNode::CompoundStatementNode(const PNode& child) : child(child) {}
+
+WhileStatementNode::WhileStatementNode(const PNode& cond, const PNode& body) : 
         condition(cond), body(body) {}
 
-RepeatStatementNode::RepeatStatementNode(const std::shared_ptr<Node>& body,
-                                         const std::shared_ptr<Node>& cond) :
+RepeatStatementNode::RepeatStatementNode(const PNode& body, const PNode& cond) :
         body(body), condition(cond) {}
 
 ForStatementNode::ForStatementNode(const std::shared_ptr<AssignmentStatementNode>& assignment,
-                                   int dir, 
-                                   const std::shared_ptr<Node>& final_expression,
-                                   const std::shared_ptr<Node>& body) :
+                                   int dir, const PNode& final_expression, const PNode& body) :
         variable(assignment -> variable), initial_expression(assignment -> expression),
         final_expression(final_expression), body(body), direction(dir) {}
 
-IfThenNode::IfThenNode(const std::shared_ptr<Node>& cond, const std::shared_ptr<Node>& body) :
+IfThenNode::IfThenNode(const PNode& cond, const PNode& body) :
         condition(cond), body(body) {}
 
-IfThenElseNode::IfThenElseNode(const std::shared_ptr<Node>& cond, 
-                               const std::shared_ptr<Node>& _then, 
-                               const std::shared_ptr<Node>& _else) : 
+IfThenElseNode::IfThenElseNode(const PNode& cond, const PNode& _then, const PNode& _else) : 
         condition(cond), then_body(_then), else_body(_else) {}
 
-VariableNode::VariableNode(const std::shared_ptr<Node>& var) : variable(var) {}
+VariableNode::VariableNode(const PNode& var) : variable(var) {}
 
-WithStatementNode::WithStatementNode(const std::shared_ptr<Node>& vars, const std::shared_ptr<Node>& body) :
+WithStatementNode::WithStatementNode(const PNode& vars, const PNode& body) :
         record_variables(vars), body(body) {}
 
-CaseLimbNode::CaseLimbNode(const std::shared_ptr<Node>& constants,
-                           const std::shared_ptr<Node>& body) 
+CaseLimbNode::CaseLimbNode(const PNode& constants, const PNode& body) 
         : constants(constants), body(body) {}
 
-CaseStatementNode::CaseStatementNode(const std::shared_ptr<Node>& expr, 
-                                     const std::shared_ptr<Node>& limbs) :
+CaseStatementNode::CaseStatementNode(const PNode& expr, const PNode& limbs) :
         expression(expr), limbs(limbs) {}
 
-ConstDefinitionNode::ConstDefinitionNode(const std::shared_ptr<Node>& id, 
-                                         const std::shared_ptr<Node>& c) :
+ConstDefinitionNode::ConstDefinitionNode(const PNode& id, const PNode& c) :
         identifier(id), constant(c) {}
+
+BoundSpecificationNode::BoundSpecificationNode(const PNode& lb, const PNode& ub, const PNode& t) :
+        lower_bound(lb), upper_bound(ub), type(t) {}
+
+UCArraySchemaNode::UCArraySchemaNode(const PNode& bs, const PNode& t) :
+        bounds(bs), type(t) {}
+
+PCArraySchemaNode::PCArraySchemaNode(const PNode& bs, const PNode& t) :
+        bounds(bs), type(t) {}
+
+VariableParameterNode::VariableParameterNode(const PNode& ids, const PNode& t) :
+        identifiers(ids), type(t) {}
+
+ValueParameterNode::ValueParameterNode(const PNode& ids, const PNode& t) :
+        identifiers(ids), type(t) {}
+
+ProcedureHeadingNode::ProcedureHeadingNode(const std::string& name, const PNode& params) :
+        name(name), params(params) {}
+
+FunctionHeadingNode::FunctionHeadingNode(const std::string& name, const PNode& params,
+        const PNode& return_type) : name(name), params(params), return_type(return_type) {}
+
+ParameterNode::ParameterNode(const PNode& child) : child(child) {}

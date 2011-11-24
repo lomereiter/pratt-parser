@@ -26,6 +26,6 @@ namespace pascal_grammar {
         .set_parser([](const std::string& str, size_t beg, size_t end) -> PNode {
             return std::make_shared<StringNode>(pascal::string_parser(str, beg, end));
         });
-    }
 
+    }
 }

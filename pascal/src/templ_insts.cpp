@@ -1,9 +1,36 @@
 #define DEBUG
 #include "parser_impl.h"
 
-//#include <memory>
+#include <memory>
+#include <string>
 
 struct Node;
+
+namespace token {
+
+    /// Specialization to treat {...} as white space
+    template <>
+    struct SkipWhiteSpace<std::shared_ptr<Node>> {
+        void operator()(const std::string& s, size_t& start, 
+                                              size_t& last_new_line,
+                                              size_t& new_lines) {
+            while (start < s.length()) {
+                if (isspace(s[start])) {
+                    if (s[start] == '\n') last_new_line = start, ++new_lines;
+                    ++start;
+                } else if (s[start] == '{') {
+                    while (start < s.length() && s[start] != '}') {
+                        if (s[start] == '\n') last_new_line = start, ++new_lines;
+                        ++start;
+                    }
+                    ++start; // skip '}'
+                } else {
+                    return;
+                }
+            }
+        }
+    };
+}
 
 template class Symbol<std::shared_ptr<Node>>;
 template class PrattParser<std::shared_ptr<Node>>;

@@ -12,6 +12,7 @@ namespace pascal_grammar {
     void add_types(PascalGrammar&);
     void add_sections(PascalGrammar&);
     void add_statements(PascalGrammar&);
+    void add_procedures_and_functions(PascalGrammar&);
 }
 
 #endif

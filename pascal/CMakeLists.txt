@@ -41,6 +41,7 @@ set (SOURCES
         src/handlers/types.cpp
         src/handlers/expressions.cpp
         src/handlers/statements.cpp
+        src/handlers/proc_func_definitions.cpp
         src/node.cpp
         src/node_tags.cpp
         src/node_traits.cpp

@@ -4,14 +4,25 @@
 #include "parser.h"
 #include "pascal_handlers.h"
 
-//#include <memory>
-//#include <string>
-//#include <functional>
+#include <memory>
+#include <string>
+#include <functional>
 
 #include "operator.h"
 #include "node_fwd.h"
 
+class PascalGrammar;
 typedef std::shared_ptr<Node> PNode;
+
+#include <iostream>
+
+
+namespace pascal_grammar {
+    namespace detail {
+        struct bound_specification_guard;
+        PNode parse_formal_parameter_list(PrattParser<PNode>&, PascalGrammar&);
+    }
+}
 
 /* Grammar definition */
 class PascalGrammar : public grammar::Grammar<PNode> {
@@ -22,8 +33,14 @@ class PascalGrammar : public grammar::Grammar<PNode> {
     friend void pascal_grammar::add_sections(PascalGrammar&);
     friend void pascal_grammar::add_statements(PascalGrammar&);
 
+    friend void pascal_grammar::add_procedures_and_functions(PascalGrammar&);
+    friend PNode pascal_grammar::detail::parse_formal_parameter_list
+                                       (PrattParser<PNode>&, PascalGrammar&);
+    friend struct pascal_grammar::detail::bound_specification_guard;
+
     Symbol<PNode> *comma, *semicolon, *sign_eq, 
-                  *colon, *opening_bracket, *end;
+                  *colon, *opening_bracket, *end,
+                  *range, *array, *packed, *var;
 
     std::unique_ptr<PrattParser<PNode>> parser;
 

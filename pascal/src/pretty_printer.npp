@@ -83,4 +83,28 @@ CaseStatementNode -> println 'CASE STATEMENT:',
                                 println 'CASES:', indented visit limbs };
 ConstDefinitionNode -> print 'CONSTANT DEFINITION: ', no_indent visit identifier,
                        indented visit constant;
-ConstSectionNode -> println 'CONSTANT DEFINITION PART:', indented visit_children
+ConstSectionNode -> println 'CONSTANT DEFINITION PART:', indented visit_children;
+BoundSpecificationNode -> println 'BOUND SPECIFICATION:', 
+                          indented { print 'LOWER BOUND: ', no_indent visit lower_bound,
+                                     print 'UPPER BOUND: ', no_indent visit upper_bound,
+                                     print 'OF TYPE: ', no_indent visit type };
+BoundSpecificationListNode -> println 'BOUND SPECIFICATION LIST:', visit_children;                           
+PCArraySchemaNode -> println 'PACKED ARRAY PARAMETER:',
+                     indented { visit bounds, println 'OF TYPE:', indented visit type };
+UCArraySchemaNode -> println 'ARRAY PARAMETER:',
+                     indented { visit bounds, println 'OF TYPE:', indented visit type };
+VariableParameterNode -> println 'VARIABLE PARAMETER:', 
+                         indented { println 'PARAMETER NAME(S):', indented visit identifiers,
+                                    println 'PARAMETER TYPE:', indented visit type };
+ValueParameterNode -> println 'VALUE PARAMETER:', 
+                      indented { println 'PARAMETER NAME(S):', indented visit identifiers,
+                                 println 'PARAMETER TYPE:', indented visit type };
+ProcedureHeadingNode -> println 'PROCEDURE HEADING:',
+                        indented { print 'NAME: ', no_indent println <name>,
+                                   println 'FORMAL PARAMETERS:', indented visit params };
+ParameterNode -> visit child;
+ParameterListNode -> visit_children;
+FunctionHeadingNode -> println 'FUNCTION HEADING:',
+                       indented { print 'NAME: ', no_indent println <name>,
+                                  println 'FORMAL PARAMETERS:', indented visit params,
+                                  print 'RETURN TYPE: ', no_indent visit return_type }

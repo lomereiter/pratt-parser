@@ -58,6 +58,16 @@ void visit(const std::shared_ptr<CaseLimbListNode >&);
 void visit(const std::shared_ptr<CaseStatementNode >&);
 void visit(const std::shared_ptr<ConstDefinitionNode >&);
 void visit(const std::shared_ptr<ConstSectionNode >&);
+void visit(const std::shared_ptr<BoundSpecificationNode >&);
+void visit(const std::shared_ptr<BoundSpecificationListNode >&);
+void visit(const std::shared_ptr<PCArraySchemaNode >&);
+void visit(const std::shared_ptr<UCArraySchemaNode >&);
+void visit(const std::shared_ptr<VariableParameterNode >&);
+void visit(const std::shared_ptr<ValueParameterNode >&);
+void visit(const std::shared_ptr<ProcedureHeadingNode >&);
+void visit(const std::shared_ptr<ParameterNode >&);
+void visit(const std::shared_ptr<ParameterListNode >&);
+void visit(const std::shared_ptr<FunctionHeadingNode >&);
 private:
 int indent, sw;
 bool is_var_section;

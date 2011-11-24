@@ -41,8 +41,8 @@ namespace pascal_grammar {
             return std::make_shared<VariableDeclNode>(x, y);
         });
 
-       g.add_symbol_to_dict("var", 1)
-        .nud = [&g, opening_bracket_scan_enum](PrattParser<PNode>& p) -> PNode {
+       g.var = &g.add_symbol_to_dict("var", 1);
+       g.var -> nud = [&g, opening_bracket_scan_enum](PrattParser<PNode>& p) -> PNode {
             PascalGrammar::lbp_guard semicolon_guard(*(g.semicolon), 0);
 
             PascalGrammar::nud_guard open_bracket_guard(*(g.opening_bracket),

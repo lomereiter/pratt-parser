@@ -13,6 +13,8 @@ struct Node {
     virtual size_t tag();
 };
 
+typedef std::shared_ptr<Node> PNode;
+
 template <class NodeType>
 struct VisitableNode : public Node {
     virtual size_t tag() {
@@ -22,10 +24,10 @@ struct VisitableNode : public Node {
 
 template <typename T>
 struct ListOf : public VisitableNode<ListOf<T>> {
-    typedef std::forward_list<std::shared_ptr<Node>> ListT;
+    typedef std::forward_list<PNode> ListT;
     ListOf() {}
     ListOf(ListT&& lst) : lst(lst) {}
-    ListOf(const std::shared_ptr<Node>& node) {
+    ListOf(const PNode& node) {
         lst.push_front(node);
     }
     ListT& list() { return lst; }
@@ -34,7 +36,7 @@ private:
 };
 
 struct OperationNode : public VisitableNode<OperationNode> {
-    std::forward_list<std::shared_ptr<Node>> args;
+    std::forward_list<PNode> args;
 
     OperationNode(int arity, Operator op);
 
@@ -47,8 +49,8 @@ private:
 };
 
 struct SignNode : public VisitableNode<SignNode> {
-    std::shared_ptr<Node> child;
-    SignNode(char sign, const std::shared_ptr<Node>& child);
+    PNode child;
+    SignNode(char sign, const PNode& child);
     char sign();
     private:
         char _sign;
@@ -70,200 +72,241 @@ struct StringNode : public VisitableNode<StringNode> {
 };
 
 struct ConstantNode : public VisitableNode<ConstantNode> {
-    std::shared_ptr<Node> child;
-    ConstantNode(const std::shared_ptr<Node>& node);
+    PNode child;
+    ConstantNode(const PNode& node);
 };
 
 struct SubrangeTypeNode : public VisitableNode<SubrangeTypeNode> {
-    std::shared_ptr<ConstantNode> lower_bound;
-    std::shared_ptr<ConstantNode> upper_bound;
+    PNode lower_bound;
+    PNode upper_bound;
 
-    SubrangeTypeNode(const std::shared_ptr<ConstantNode>& lb, 
-                     const std::shared_ptr<ConstantNode>& ub);
+    SubrangeTypeNode(const PNode& lb, const PNode& ub);
 };
 
 struct EnumeratedTypeNode : public VisitableNode<EnumeratedTypeNode> {
-    std::shared_ptr<Node> identifiers;
-    EnumeratedTypeNode(const std::shared_ptr<Node>& id_list);
+    PNode identifiers;
+    EnumeratedTypeNode(const PNode& id_list);
 };
 
 struct VariableDeclNode : public VisitableNode<VariableDeclNode> {
-    std::shared_ptr<Node> id_list;
-    std::shared_ptr<Node> type;
+    PNode id_list;
+    PNode type;
 
-    VariableDeclNode(const std::shared_ptr<Node>& id_list, 
-                     const std::shared_ptr<Node>& type);
+    VariableDeclNode(const PNode& id_list, const PNode& type);
 };
 
 struct RecordTypeNode : public VisitableNode<RecordTypeNode> {
-    std::shared_ptr<Node> child;
-    RecordTypeNode(const std::shared_ptr<Node>& node);
+    PNode child;
+    RecordTypeNode(const PNode& node);
 };
 
 struct SetTypeNode : public VisitableNode<SetTypeNode> {
-    std::shared_ptr<Node> type;
-    SetTypeNode(const std::shared_ptr<Node>& type);
+    PNode type;
+    SetTypeNode(const PNode& type);
 };
 
 struct FileTypeNode : public VisitableNode<FileTypeNode> {
-    std::shared_ptr<Node> type;
-    FileTypeNode(const std::shared_ptr<Node>& type);
+    PNode type;
+    FileTypeNode(const PNode& type);
 };
 
 struct PointerTypeNode : public VisitableNode<PointerTypeNode> {
-    std::shared_ptr<Node> type;
-    PointerTypeNode(const std::shared_ptr<Node>& type);
+    PNode type;
+    PointerTypeNode(const PNode& type);
 };
 
 struct IndexTypeNode : public VisitableNode<IndexTypeNode> {
-    std::shared_ptr<Node> type;
-    IndexTypeNode(const std::shared_ptr<Node>& node);
+    PNode type;
+    IndexTypeNode(const PNode& node);
 };
 
 struct ArrayTypeNode : public VisitableNode<ArrayTypeNode> {
-    std::shared_ptr<Node> index_type_list;
-    std::shared_ptr<Node> type;
-    ArrayTypeNode(const std::shared_ptr<Node>& list, const std::shared_ptr<Node>& type);
+    PNode index_type_list;
+    PNode type;
+    ArrayTypeNode(const PNode& list, const PNode& type);
 };
 
 struct VariableSectionNode : public VisitableNode<VariableSectionNode> {
-    std::shared_ptr<Node> declarations;
-    VariableSectionNode(const std::shared_ptr<Node>& decls);
+    PNode declarations;
+    VariableSectionNode(const PNode& decls);
 };
 
 struct TypeDefinitionNode : public VisitableNode<TypeDefinitionNode> {
-    std::shared_ptr<Node> name;
-    std::shared_ptr<Node> type;
-    TypeDefinitionNode(const std::shared_ptr<Node>& name, const std::shared_ptr<Node>& type);
+    PNode name;
+    PNode type;
+    TypeDefinitionNode(const PNode& name, const PNode& type);
 };
 
 struct PackedTypeNode : public VisitableNode<PackedTypeNode> {
-    std::shared_ptr<Node> type;
-    PackedTypeNode(const std::shared_ptr<Node>& type);
+    PNode type;
+    PackedTypeNode(const PNode& type);
 };
 
 struct DeclarationNode : public VisitableNode<DeclarationNode> {
-    std::shared_ptr<Node> child;
-    DeclarationNode(const std::shared_ptr<Node>& child);
+    PNode child;
+    DeclarationNode(const PNode& child);
 };
 
 struct ExpressionNode : public VisitableNode<ExpressionNode> {
-    std::shared_ptr<Node> child;
-    ExpressionNode(const std::shared_ptr<Node>& child);
+    PNode child;
+    ExpressionNode(const PNode& child);
 };
 
 struct SetNode : public VisitableNode<SetNode> {
-    std::shared_ptr<Node> elements;
-    SetNode(const std::shared_ptr<Node>& elems);
+    PNode elements;
+    SetNode(const PNode& elems);
 };
 
 struct IndexedVariableNode : public VisitableNode<IndexedVariableNode> {
-    std::shared_ptr<Node> array_variable;
-    std::shared_ptr<Node> indices;
-    IndexedVariableNode(const std::shared_ptr<Node>& array_var,
-                        const std::shared_ptr<Node>& indices);
+    PNode array_variable;
+    PNode indices;
+    IndexedVariableNode(const PNode& array_var, const PNode& indices);
 };
 
 struct ReferencedVariableNode : public VisitableNode<ReferencedVariableNode> {
-    std::shared_ptr<Node> variable;
-    ReferencedVariableNode(const std::shared_ptr<Node>& var);
+    PNode variable;
+    ReferencedVariableNode(const PNode& var);
 };
 
 struct FieldDesignatorNode : public VisitableNode<FieldDesignatorNode> {
-    std::shared_ptr<Node> variable;
-    std::shared_ptr<Node> field;
-    FieldDesignatorNode(const std::shared_ptr<Node>& var,
-                        const std::shared_ptr<Node>& field);
+    PNode variable;
+    PNode field;
+    FieldDesignatorNode(const PNode& var, const PNode& field);
 };
 
 struct FunctionDesignatorNode : public VisitableNode<FunctionDesignatorNode> {
-    std::shared_ptr<Node> function;
-    std::shared_ptr<Node> parameters;
-    FunctionDesignatorNode(const std::shared_ptr<Node>& func,
-                           const std::shared_ptr<Node>& params);
+    PNode function;
+    PNode parameters;
+    FunctionDesignatorNode(const PNode& func, const PNode& params);
 };
 
 struct AssignmentStatementNode : public VisitableNode<AssignmentStatementNode> {
-    std::shared_ptr<Node> variable;
-    std::shared_ptr<Node> expression;
-    AssignmentStatementNode(const std::shared_ptr<Node>& var,
-                   const std::shared_ptr<Node>& expr);
+    PNode variable;
+    PNode expression;
+    AssignmentStatementNode(const PNode& var, const PNode& expr);
 };
 
 struct StatementNode : public VisitableNode<StatementNode> {
-    std::shared_ptr<Node> child;
-    StatementNode(const std::shared_ptr<Node>& child);
+    PNode child;
+    StatementNode(const PNode& child);
 };
 
 struct CompoundStatementNode : public VisitableNode<CompoundStatementNode> {
-    std::shared_ptr<Node> child;
-    CompoundStatementNode(const std::shared_ptr<Node>& child);
+    PNode child;
+    CompoundStatementNode(const PNode& child);
 };
 
 struct WhileStatementNode : public VisitableNode<WhileStatementNode> {
-    std::shared_ptr<Node> condition;
-    std::shared_ptr<Node> body;
-    WhileStatementNode(const std::shared_ptr<Node>& cond,
-                       const std::shared_ptr<Node>& body);
+    PNode condition;
+    PNode body;
+    WhileStatementNode(const PNode& cond, const PNode& body);
 };
 
 struct RepeatStatementNode : public VisitableNode<RepeatStatementNode> {
-    std::shared_ptr<Node> body;
-    std::shared_ptr<Node> condition;
-    RepeatStatementNode(const std::shared_ptr<Node>& body,
-                        const std::shared_ptr<Node>& cond);
+    PNode body;
+    PNode condition;
+    RepeatStatementNode(const PNode& body, const PNode& cond);
 };
 
 struct ForStatementNode : public VisitableNode<ForStatementNode> {
-    std::shared_ptr<Node> variable;
-    std::shared_ptr<Node> initial_expression;
-    std::shared_ptr<Node> final_expression;
-    std::shared_ptr<Node> body;
+    PNode variable;
+    PNode initial_expression;
+    PNode final_expression;
+    PNode body;
     int direction;
     ForStatementNode(const std::shared_ptr<AssignmentStatementNode>&, int, 
-                     const std::shared_ptr<Node>&, const std::shared_ptr<Node>&);
+                     const PNode&, const PNode&);
 };
 
 struct IfThenNode : public VisitableNode<IfThenNode> {
-    std::shared_ptr<Node> condition;
-    std::shared_ptr<Node> body;
-    IfThenNode(const std::shared_ptr<Node>& cond, const std::shared_ptr<Node>& body);
+    PNode condition;
+    PNode body;
+    IfThenNode(const PNode& cond, const PNode& body);
 };
 
 struct IfThenElseNode : public VisitableNode<IfThenElseNode> {
-    std::shared_ptr<Node> condition;
-    std::shared_ptr<Node> then_body;
-    std::shared_ptr<Node> else_body;
-    IfThenElseNode(const std::shared_ptr<Node>& cond, const std::shared_ptr<Node>& _then,
-                   const std::shared_ptr<Node>& _else);
+    PNode condition;
+    PNode then_body;
+    PNode else_body;
+    IfThenElseNode(const PNode& cond, const PNode& _then, const PNode& _else);
 };
 
 struct VariableNode : public VisitableNode<VariableNode> {
-    std::shared_ptr<Node> variable;
-    VariableNode(const std::shared_ptr<Node>& var);
+    PNode variable;
+    VariableNode(const PNode& var);
 };
 
 struct WithStatementNode : public VisitableNode<WithStatementNode> {
-    std::shared_ptr<Node> record_variables;
-    std::shared_ptr<Node> body;
-    WithStatementNode(const std::shared_ptr<Node>& vars, const std::shared_ptr<Node>& body);
+    PNode record_variables;
+    PNode body;
+    WithStatementNode(const PNode& vars, const PNode& body);
 };
 
 struct CaseLimbNode : public VisitableNode<CaseLimbNode> {
-    std::shared_ptr<Node> constants;
-    std::shared_ptr<Node> body;
-    CaseLimbNode(const std::shared_ptr<Node>& constants, const std::shared_ptr<Node>& body);
+    PNode constants;
+    PNode body;
+    CaseLimbNode(const PNode& constants, const PNode& body);
 };
 
 struct CaseStatementNode : public VisitableNode<CaseStatementNode> {
-    std::shared_ptr<Node> expression;
-    std::shared_ptr<Node> limbs;
-    CaseStatementNode(const std::shared_ptr<Node>& expr, const std::shared_ptr<Node>& limbs);
+    PNode expression;
+    PNode limbs;
+    CaseStatementNode(const PNode& expr, const PNode& limbs);
 };
 
 struct ConstDefinitionNode : public VisitableNode<ConstDefinitionNode> {
-    std::shared_ptr<Node> identifier;
-    std::shared_ptr<Node> constant;
-    ConstDefinitionNode(const std::shared_ptr<Node>& id, const std::shared_ptr<Node>& c);
+    PNode identifier;
+    PNode constant;
+    ConstDefinitionNode(const PNode& id, const PNode& c);
 };
+
+struct BoundSpecificationNode : public VisitableNode<BoundSpecificationNode> {
+    PNode lower_bound;
+    PNode upper_bound;
+    PNode type;
+    BoundSpecificationNode(const PNode& lb, const PNode& ub, const PNode& type);
+};
+
+struct UCArraySchemaNode : public VisitableNode<UCArraySchemaNode> {
+    PNode bounds;
+    PNode type;
+    UCArraySchemaNode(const PNode& bounds, const PNode& type);
+};
+
+struct PCArraySchemaNode : public VisitableNode<PCArraySchemaNode> {
+    PNode bounds;
+    PNode type;
+    PCArraySchemaNode(const PNode& bounds, const PNode& type);
+};
+
+struct VariableParameterNode : public VisitableNode<VariableParameterNode> {
+    PNode identifiers;
+    PNode type;
+    VariableParameterNode(const PNode& ids, const PNode& type);
+};
+
+struct ValueParameterNode : public VisitableNode<ValueParameterNode> {
+    PNode identifiers;
+    PNode type;
+    ValueParameterNode(const PNode& ids, const PNode& type);
+};
+
+struct ProcedureHeadingNode : public VisitableNode<ProcedureHeadingNode> {
+    std::string name;
+    PNode params;
+    ProcedureHeadingNode(const std::string& name, const PNode& params);
+};
+
+struct ParameterNode : public VisitableNode<ParameterNode> {
+    PNode child;
+    ParameterNode(const PNode& child);
+};
+
+struct FunctionHeadingNode : public VisitableNode<FunctionHeadingNode> {
+    std::string name;
+    PNode params;
+    PNode return_type;
+    FunctionHeadingNode(const std::string& n, const PNode& p, const PNode& r);
+};
+
 #endif

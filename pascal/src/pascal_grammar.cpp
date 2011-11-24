@@ -12,18 +12,19 @@
 
 using namespace grammar;
 
-/* Grammar definition */
 
+/* Grammar definition */
 PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
 
     pascal_grammar::add_literals(*this); 
     pascal_grammar::add_operators(*this); // initializes opening_bracket, sign_eq
-    pascal_grammar::add_types(*this);     // initializes comma, semicolon, end
-    pascal_grammar::add_sections(*this);  // initializes colon
+    pascal_grammar::add_types(*this);     // initializes comma, semicolon, end, range, array, packed
+    pascal_grammar::add_sections(*this);  // initializes colon, var
     pascal_grammar::add_expressions(*this);
     pascal_grammar::add_statements(*this);
+    pascal_grammar::add_procedures_and_functions(*this);
 
-    }
+}
 
 PNode PascalGrammar::parse(const std::string& str) {
     static PascalGrammar pg;

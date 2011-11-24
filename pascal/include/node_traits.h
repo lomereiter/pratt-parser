@@ -20,7 +20,7 @@ namespace node_traits {
 
         struct TraitsVisitor : public AstIgnoreVisitor {
             using AstIgnoreVisitor::visit;
-            bool operator()(const std::shared_ptr<Node>& node) {
+            bool operator()(const PNode& node) {
                 has_trait = false;
                 travel(node);
                 return has_trait;
@@ -61,7 +61,7 @@ namespace node_traits {
    } // namespace visitors
 
     template <typename T>
-    bool has_type(const std::shared_ptr<Node>& node) {
+    bool has_type(const PNode& node) {
 #ifdef DEBUG
         std::cout << "Node tag: " << node -> tag() << "; type tag: " << node_traits::get_tag_value<T>() << '\n';
 #endif
@@ -104,14 +104,25 @@ namespace node_traits {
                 IfThenNode, IfThenElseNode,
                 WithStatementNode, CaseStatementNode> IsStatement;
 
-        bool __is_convertible_helper(type<ExpressionNode>, const std::shared_ptr<Node>&);
-        bool __is_convertible_helper(type<VariableNode>, const std::shared_ptr<Node>&);
-        bool __is_convertible_helper(type<IndexTypeNode>, const std::shared_ptr<Node>&);
-        bool __is_convertible_helper(type<StatementNode>, const std::shared_ptr<Node>&);
-        bool __is_convertible_helper(type<ConstantNode>, const std::shared_ptr<Node>&);
+        typedef AreConvertibleTo< dummy_type,
+                UCArraySchemaNode, PCArraySchemaNode> IsConformantArraySchema;
+
+        typedef AreConvertibleTo< dummy_type,
+                utils::append< IsConformantArraySchema::list, IdentifierNode>::list> IsParamType;
+
+        typedef AreConvertibleTo< ParameterNode,
+                VariableParameterNode, ValueParameterNode, 
+                ProcedureHeadingNode, FunctionHeadingNode> IsParameterNode;
+
+        bool __is_convertible_helper(type<ExpressionNode>, const PNode&);
+        bool __is_convertible_helper(type<VariableNode>,   const PNode&);
+        bool __is_convertible_helper(type<IndexTypeNode>,  const PNode&);
+        bool __is_convertible_helper(type<StatementNode>,  const PNode&);
+        bool __is_convertible_helper(type<ConstantNode>,   const PNode&);
+        bool __is_convertible_helper(type<ParameterNode>,  const PNode&);
 
         template <typename _Node>
-        bool __is_convertible_helper(type<_Node>, const std::shared_ptr<Node>&) { 
+        bool __is_convertible_helper(type<_Node>, const PNode&) { 
             return false;
         }
 
@@ -119,9 +130,11 @@ namespace node_traits {
 
     static detail::IsUST is_unpacked_structured_type;
     static detail::IsType is_type;
+    static detail::IsConformantArraySchema is_conformant_array_schema;
+    static detail::IsParamType is_parameter_type;
 
     template <typename _Node>
-    bool is_convertible_to(const std::shared_ptr<Node>& node) { 
+    bool is_convertible_to(const PNode& node) { 
         if (node -> tag() == node_traits::get_tag_value<_Node>())
             return true;
         return detail::__is_convertible_helper(detail::type<_Node>(), node);
@@ -133,11 +146,12 @@ namespace node_traits {
     template <> struct there_exist_coercions_to<ExpressionNode> { enum { value = 1 }; };
     template <> struct there_exist_coercions_to<StatementNode>  { enum { value = 1 }; };
     template <> struct there_exist_coercions_to<VariableNode>   { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<ParameterNode>  { enum { value = 1 }; };
 
     template <typename T> struct list_of { typedef ListOf<T> type; };
     
     template <typename T>
-    bool is_list_of(const std::shared_ptr<Node>& node) {
+    bool is_list_of(const PNode& node) {
         return has_type<typename node_traits::list_of<T>::type>(node) ||
                is_convertible_to<T>(node);
     }
@@ -157,7 +171,7 @@ namespace node {
      * Otherwise, calls constructor of T taking node as its argument.
      */
     template <typename T>
-    std::shared_ptr<T> convert_to(const std::shared_ptr<Node>& node) {
+    std::shared_ptr<T> convert_to(const PNode& node) {
         if (node_traits::has_type<T>(node))
             return std::static_pointer_cast<T>(node);
         return std::make_shared<T>(node);

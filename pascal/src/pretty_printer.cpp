@@ -8,7 +8,7 @@
 PrettyPrinter::PrettyPrinter(int sw) : indent(0), sw(sw),
 is_var_section(false)
 {
-Visits<PrettyPrinter, Node, NumberNode, IdentifierNode, IdentifierListNode, ConstantNode, StringNode, EnumeratedTypeNode, PointerTypeNode, RecordTypeNode, SetTypeNode, FileTypeNode, IndexTypeNode, IndexTypeListNode, PackedTypeNode, VariableSectionNode, TypeDefinitionNode, TypeSectionNode, OperationNode, SignNode, SubrangeTypeNode, VariableDeclNode, VariableDeclListNode, ArrayTypeNode, DeclarationNode, DeclarationListNode, ExpressionNode, ExpressionListNode, SetNode, IndexedVariableNode, ReferencedVariableNode, FieldDesignatorNode, FunctionDesignatorNode, AssignmentStatementNode, StatementNode, StatementListNode, CompoundStatementNode, WhileStatementNode, RepeatStatementNode, ForStatementNode, IfThenNode, IfThenElseNode, VariableNode, VariableListNode, WithStatementNode, ConstantListNode, CaseLimbNode, CaseLimbListNode, CaseStatementNode, ConstDefinitionNode, ConstSectionNode>();
+Visits<PrettyPrinter, Node, NumberNode, IdentifierNode, IdentifierListNode, ConstantNode, StringNode, EnumeratedTypeNode, PointerTypeNode, RecordTypeNode, SetTypeNode, FileTypeNode, IndexTypeNode, IndexTypeListNode, PackedTypeNode, VariableSectionNode, TypeDefinitionNode, TypeSectionNode, OperationNode, SignNode, SubrangeTypeNode, VariableDeclNode, VariableDeclListNode, ArrayTypeNode, DeclarationNode, DeclarationListNode, ExpressionNode, ExpressionListNode, SetNode, IndexedVariableNode, ReferencedVariableNode, FieldDesignatorNode, FunctionDesignatorNode, AssignmentStatementNode, StatementNode, StatementListNode, CompoundStatementNode, WhileStatementNode, RepeatStatementNode, ForStatementNode, IfThenNode, IfThenElseNode, VariableNode, VariableListNode, WithStatementNode, ConstantListNode, CaseLimbNode, CaseLimbListNode, CaseStatementNode, ConstDefinitionNode, ConstSectionNode, BoundSpecificationNode, BoundSpecificationListNode, PCArraySchemaNode, UCArraySchemaNode, VariableParameterNode, ValueParameterNode, ProcedureHeadingNode, ParameterNode, ParameterListNode, FunctionHeadingNode>();
 }
 void PrettyPrinter::visit(const std::shared_ptr<Node>& e) {
 std::cout << std::string(indent, ' ') << "IMPLEMENT ME!";
@@ -494,5 +494,142 @@ std::cout << std::endl;
 indent += sw;
 for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
 indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<BoundSpecificationNode>& e) {
+std::cout << std::string(indent, ' ') << "BOUND SPECIFICATION:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "LOWER BOUND: ";
+{ int old_indent = indent;
+indent = 0;
+travel(e -> lower_bound);
+indent = old_indent;
+}std::cout << std::string(indent, ' ') << "UPPER BOUND: ";
+{ int old_indent = indent;
+indent = 0;
+travel(e -> upper_bound);
+indent = old_indent;
+}std::cout << std::string(indent, ' ') << "OF TYPE: ";
+{ int old_indent = indent;
+indent = 0;
+travel(e -> type);
+indent = old_indent;
+}indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<BoundSpecificationListNode>& e) {
+std::cout << std::string(indent, ' ') << "BOUND SPECIFICATION LIST:";
+std::cout << std::endl;
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<PCArraySchemaNode>& e) {
+std::cout << std::string(indent, ' ') << "PACKED ARRAY PARAMETER:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> bounds);
+std::cout << std::string(indent, ' ') << "OF TYPE:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> type);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<UCArraySchemaNode>& e) {
+std::cout << std::string(indent, ' ') << "ARRAY PARAMETER:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> bounds);
+std::cout << std::string(indent, ' ') << "OF TYPE:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> type);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<VariableParameterNode>& e) {
+std::cout << std::string(indent, ' ') << "VARIABLE PARAMETER:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "PARAMETER NAME(S):";
+std::cout << std::endl;
+indent += sw;
+travel(e -> identifiers);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "PARAMETER TYPE:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> type);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<ValueParameterNode>& e) {
+std::cout << std::string(indent, ' ') << "VALUE PARAMETER:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "PARAMETER NAME(S):";
+std::cout << std::endl;
+indent += sw;
+travel(e -> identifiers);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "PARAMETER TYPE:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> type);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<ProcedureHeadingNode>& e) {
+std::cout << std::string(indent, ' ') << "PROCEDURE HEADING:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "NAME: ";
+{ int old_indent = indent;
+indent = 0;
+std::cout << std::string(indent, ' ') << e -> name;
+std::cout << std::endl;
+indent = old_indent;
+}std::cout << std::string(indent, ' ') << "FORMAL PARAMETERS:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> params);
+indent -= sw;
+indent -= sw;
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<ParameterNode>& e) {
+travel(e -> child);
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<ParameterListNode>& e) {
+for (auto it = e -> list().begin(); it != e -> list().end(); ++it)travel(*it);
+
+}
+void PrettyPrinter::visit(const std::shared_ptr<FunctionHeadingNode>& e) {
+std::cout << std::string(indent, ' ') << "FUNCTION HEADING:";
+std::cout << std::endl;
+indent += sw;
+std::cout << std::string(indent, ' ') << "NAME: ";
+{ int old_indent = indent;
+indent = 0;
+std::cout << std::string(indent, ' ') << e -> name;
+std::cout << std::endl;
+indent = old_indent;
+}std::cout << std::string(indent, ' ') << "FORMAL PARAMETERS:";
+std::cout << std::endl;
+indent += sw;
+travel(e -> params);
+indent -= sw;
+std::cout << std::string(indent, ' ') << "RETURN TYPE: ";
+{ int old_indent = indent;
+indent = 0;
+travel(e -> return_type);
+indent = old_indent;
+}indent -= sw;
 
 }

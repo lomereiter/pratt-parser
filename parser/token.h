@@ -7,6 +7,28 @@
 #include <functional>
 #include <memory>
 
+namespace token {
+    /** Specializations of this class can be provided in order to treat
+     *  comments as white space. See Token::iterator.
+     */
+    template <typename T>
+    struct SkipWhiteSpace {
+        void operator()(const std::string& str, size_t& start, 
+                                                size_t& last_new_line,
+                                                size_t& current_line_) 
+        {
+            static std::locale loc;
+            while (start < str.length() && std::isspace(str[start], loc)) {
+                if (str[start] == '\n') {
+                    last_new_line = start;
+                    ++current_line_;
+                }
+                ++start;
+            }
+        }
+    };
+}
+
 /// Represents an atomic entity used by PrattParser instance.
 /** Is linked with a Symbol instance via pointer. That allows to
  * change the behaviour of already produced token via changing that
@@ -42,12 +64,20 @@ class Token {
             const Symbol<T>* match; ///< points to Symbol which matches current Token
             size_t last_new_line_;  ///< position in #str of last '\n' character
             size_t current_line_;   ///< one-indexed current line
-            static bool is_white_space(char c);
 
             public:
             /// initializes #str and #symbols
             iterator(const std::string& str,
                      const SymbolDict<T>& symbols);
+
+            /** token::SkipWhiteSpace shall have
+             *      void operator()(const std::string&, size_t& start, 
+             *                                          size_t& last_new_line,
+             *                                          size_t& new_lines);
+             *      which shall update the number of new lines encountered,
+             *                  update \a start position and \a last_new_line appropriately.
+             */
+            static typename token::SkipWhiteSpace<T> skip_white_space;
 
             /** Skips whitespace and tries to scan #str for all symbols of Grammar in turn 
              *  starting from #end. If the end of #str is reached returns symbols.end_symbol()

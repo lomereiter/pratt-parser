@@ -17,7 +17,7 @@ namespace pascal_grammar {
                 return nullptr;
             });
 
-       g.infix("..", 90, 
+       g.range = &g.infix("..", 90, 
             [&g](PNode x, PNode y) -> PNode {
                 if (!node_traits::is_convertible_to<ConstantNode>(x)) 
                     g.error("expected a constant as the lower bound");
@@ -86,8 +86,8 @@ namespace pascal_grammar {
             return std::make_shared<FileTypeNode>( p.advance("of").parse(1) );
         };
 
-       g.add_symbol_to_dict("array", 1)
-        .nud = [&g](PrattParser<PNode>& p) -> PNode {
+       g.array = &g.add_symbol_to_dict("array", 1);
+       g.array -> nud = [&g](PrattParser<PNode>& p) -> PNode {
             PNode bounds;
             {
                 PascalGrammar::behaviour_guard<RightAssociative> guard(*(g.comma), 
@@ -96,20 +96,32 @@ namespace pascal_grammar {
                                .get_expression();
                     });
 
-                bounds = p.advance("[").parse(10);
+                if (p.next_token_as_string() != "[")
+                    g.error("expected '[' after 'array'");
+                p.advance();
+
+                bounds = p.parse(10);
                 if (node_traits::is_convertible_to<IndexTypeNode>(bounds))
                     bounds = node::make_list(node::convert_to<IndexTypeNode>(bounds));
                 if (!node_traits::is_list_of<IndexTypeNode>(bounds))
                     g.error("expected list of index types");
             }
-            PNode type = p.advance("]").advance("of").parse(1);
+            if (p.next_token_as_string() != "]")
+                g.error("expected ']' in array type definition");
+            p.advance();
+
+            if (p.next_token_as_string() != "of")
+                g.error("expected 'of' in array type definition");
+            p.advance();
+
+            PNode type = p.parse(1);
             if (!node_traits::is_type(type)) 
                 g.error("expected type in array type definition");
             return std::make_shared<ArrayTypeNode>(bounds, type);
         };
 
-       g.add_symbol_to_dict("packed", 1)
-        .nud = [&g](PrattParser<PNode>& p) -> PNode {
+       g.packed = &g.add_symbol_to_dict("packed", 1);
+       g.packed -> nud = [&g](PrattParser<PNode>& p) -> PNode {
             PNode type = p.parse(1);
             if (!node_traits::is_unpacked_structured_type(type)) {
                 g.error("expected unpacked structured type after 'packed'");

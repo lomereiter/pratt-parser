@@ -36,12 +36,6 @@ T Token<T>::led(PrattParser<T>& parser, T left) const {
 }
 
 template <typename T>
-bool Token<T>::iterator::is_white_space(char c) {
-    static std::locale loc;
-    return std::isspace(c, loc);
-}
-
-template <typename T>
 Token<T>::iterator::iterator(const std::string& s, 
          const SymbolDict<T>& symbols) :
     str(s), symbols(symbols), start(0), end(0),
@@ -51,13 +45,8 @@ Token<T>::iterator::iterator(const std::string& s,
 
 template <typename T>
 typename Token<T>::iterator& Token<T>::iterator::operator++() {
-    while (start < str.length() && is_white_space(str[start])) {
-        if (str[start] == '\n') {
-            last_new_line_ = start;
-            ++current_line_;
-        }
-        ++start;
-    }
+
+    skip_white_space(str, start, last_new_line_, current_line_);
 
     if (start < str.length()) {
         end = start;
