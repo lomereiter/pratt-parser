@@ -33,6 +33,7 @@ namespace token {
 }
 
 template class Symbol<std::shared_ptr<Node>>;
+template class Token<std::shared_ptr<Node>>;
 template class PrattParser<std::shared_ptr<Node>>;
 template class grammar::Grammar<std::shared_ptr<Node>>;
 

@@ -23,6 +23,7 @@ namespace pascal_grammar {
 
             PascalGrammar::lbp_guard sl_guard(*(g.semicolon), 1);
             PascalGrammar::lbp_guard end_guard(*(g.end), 0);
+            PascalGrammar::lbp_guard dot_guard(*(g.dot), 1000);
 
             PascalGrammar::behaviour_guard<RightAssociative> sb_guard(*(g.semicolon),
                 [&g](PNode x, PNode y) {

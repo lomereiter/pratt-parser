@@ -40,7 +40,7 @@ class PascalGrammar : public grammar::Grammar<PNode> {
 
     Symbol<PNode> *comma, *semicolon, *sign_eq, 
                   *colon, *opening_bracket, *end,
-                  *range, *array, *packed, *var;
+                  *range, *array, *packed, *var, *dot;
 
     std::unique_ptr<PrattParser<PNode>> parser;
 

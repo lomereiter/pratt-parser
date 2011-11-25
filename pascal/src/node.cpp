@@ -125,3 +125,15 @@ FunctionHeadingNode::FunctionHeadingNode(const std::string& name, const PNode& p
         const PNode& return_type) : name(name), params(params), return_type(return_type) {}
 
 ParameterNode::ParameterNode(const PNode& child) : child(child) {}
+
+ProcedureNode::ProcedureNode(const PNode& heading, const PNode& body) : 
+        heading(heading), body(body) {}
+
+FunctionNode::FunctionNode(const PNode& heading, const PNode& body) :
+        heading(heading), body(body) {}
+
+ProcedureForwardDeclNode::ProcedureForwardDeclNode(const PNode& heading) : heading(heading) {}
+FunctionForwardDeclNode::FunctionForwardDeclNode(const PNode& heading) : heading(heading) {}
+
+BlockNode::BlockNode(const PNode& declarations, const PNode& statements) :
+    declarations(declarations), statements(statements) {}

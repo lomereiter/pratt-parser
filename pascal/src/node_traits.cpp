@@ -23,6 +23,11 @@ bool __is_convertible_helper(type<StatementNode>, const PNode& node) {
     return is_statement(node);
 }
 
+bool __is_convertible_helper(type<DeclarationNode>, const PNode& node) {
+    static IsDeclaration is_decl;
+    return is_decl(node);
+}
+
 bool __is_convertible_helper(type<ConstantNode>, const PNode& node) {
     static AreConvertibleTo<ConstantNode,
         StringNode, NumberNode, IdentifierNode> is_surely_constant;

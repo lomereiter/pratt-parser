@@ -309,4 +309,31 @@ struct FunctionHeadingNode : public VisitableNode<FunctionHeadingNode> {
     FunctionHeadingNode(const std::string& n, const PNode& p, const PNode& r);
 };
 
+struct ProcedureNode : public VisitableNode<ProcedureNode> {
+    PNode heading;
+    PNode body;
+    ProcedureNode(const PNode& heading, const PNode& body);
+};
+
+struct FunctionNode : public VisitableNode<FunctionNode> {
+    PNode heading;
+    PNode body;
+    FunctionNode(const PNode& heading, const PNode& body);
+};
+
+struct ProcedureForwardDeclNode : public VisitableNode<ProcedureForwardDeclNode> {
+    PNode heading;
+    ProcedureForwardDeclNode(const PNode& heading);
+};
+
+struct FunctionForwardDeclNode : public VisitableNode<FunctionForwardDeclNode> {
+    PNode heading;
+    FunctionForwardDeclNode(const PNode& heading);
+};
+
+struct BlockNode : public VisitableNode<BlockNode> {
+    PNode declarations;
+    PNode statements;
+    BlockNode(const PNode& declarations, const PNode& statements);
+};
 #endif

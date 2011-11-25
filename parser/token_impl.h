@@ -15,6 +15,9 @@ template <typename T>
 const std::string& Token<T>::id() const { return sym_ptr -> id; }
 
 template <typename T>
+const Symbol<T>& Token<T>::symbol() const { return *sym_ptr; }
+
+template <typename T>
 int Token<T>::lbp() const { return sym_ptr -> lbp; }
 
 template <typename T>

@@ -86,4 +86,10 @@ struct FunctionHeadingNode;
 struct ParameterNode;
 typedef ListOf<ParameterNode> ParameterListNode;
 
+struct ProcedureNode;
+struct FunctionNode;
+struct ProcedureForwardDeclNode;
+struct FunctionForwardDeclNode;
+struct BlockNode;
+
 #endif

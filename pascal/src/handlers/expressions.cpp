@@ -47,19 +47,20 @@ namespace pascal_grammar {
                     parse_expression_list_and_closing_bracket(p));
         };
 
-       g.postfix("^", 1, [&g](PNode node) -> PNode {
+       g.postfix("^", 1000, [&g](PNode node) -> PNode {
                 if (!node_traits::is_convertible_to<VariableNode>(node)) 
                     g.error("expected a variable before '^'");
                 return std::make_shared<ReferencedVariableNode>(node);
             });
 
-       g.infix(".", 1000, [&g](PNode var, PNode field) -> PNode {
+       g.dot = &g.infix(".", 1000, [&g](PNode var, PNode field) -> PNode {
             if (!node_traits::is_convertible_to<VariableNode>(var))
                 g.error("expected a variable before '.'");
             if (!node_traits::has_type<IdentifierNode>(field)) 
                 g.error("expected identifier after '.'");
                 return std::make_shared<FieldDesignatorNode>(var, field);
             });
+       g.dot -> lbp = 0; // 0 is changed to 1000 in 'begin' handler
 
        g.add_symbol_to_dict(")", 0);
        g.add_symbol_to_dict("(", 1000) /* foo ( x, y, ... ) */

@@ -5,6 +5,7 @@
 //#include <type_traits>
 
 //#include "node.h"
+#include "node_fwd.h"
 #include "visitor.h"
 //#include "node_tags.h"
 #include "utils.h"
@@ -114,12 +115,18 @@ namespace node_traits {
                 VariableParameterNode, ValueParameterNode, 
                 ProcedureHeadingNode, FunctionHeadingNode> IsParameterNode;
 
-        bool __is_convertible_helper(type<ExpressionNode>, const PNode&);
-        bool __is_convertible_helper(type<VariableNode>,   const PNode&);
-        bool __is_convertible_helper(type<IndexTypeNode>,  const PNode&);
-        bool __is_convertible_helper(type<StatementNode>,  const PNode&);
-        bool __is_convertible_helper(type<ConstantNode>,   const PNode&);
-        bool __is_convertible_helper(type<ParameterNode>,  const PNode&);
+        typedef AreConvertibleTo< DeclarationNode,
+                VariableSectionNode, TypeSectionNode, ConstSectionNode,
+                FunctionNode, FunctionForwardDeclNode,
+                ProcedureNode, ProcedureForwardDeclNode> IsDeclaration;
+
+        bool __is_convertible_helper(type<ExpressionNode>,  const PNode&);
+        bool __is_convertible_helper(type<VariableNode>,    const PNode&);
+        bool __is_convertible_helper(type<IndexTypeNode>,   const PNode&);
+        bool __is_convertible_helper(type<StatementNode>,   const PNode&);
+        bool __is_convertible_helper(type<ConstantNode>,    const PNode&);
+        bool __is_convertible_helper(type<ParameterNode>,   const PNode&);
+        bool __is_convertible_helper(type<DeclarationNode>, const PNode&);
 
         template <typename _Node>
         bool __is_convertible_helper(type<_Node>, const PNode&) { 
@@ -140,13 +147,14 @@ namespace node_traits {
         return detail::__is_convertible_helper(detail::type<_Node>(), node);
     }
 
-    template <typename _Node> struct there_exist_coercions_to   { enum { value = 0 }; };
-    template <> struct there_exist_coercions_to<IndexTypeNode>  { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ConstantNode>   { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ExpressionNode> { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<StatementNode>  { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<VariableNode>   { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ParameterNode>  { enum { value = 1 }; };
+    template <typename _Node> struct there_exist_coercions_to    { enum { value = 0 }; };
+    template <> struct there_exist_coercions_to<IndexTypeNode>   { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<ConstantNode>    { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<ExpressionNode>  { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<StatementNode>   { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<VariableNode>    { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<ParameterNode>   { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<DeclarationNode> { enum { value = 1 }; };
 
     template <typename T> struct list_of { typedef ListOf<T> type; };
     

@@ -48,6 +48,7 @@ class Token {
         virtual ~Token();
 
         const std::string& id() const;
+        const Symbol<T>& symbol() const;
         int lbp() const;
         virtual T nud(PrattParser<T>& parser) const;
         T led(PrattParser<T>& parser, T left) const;

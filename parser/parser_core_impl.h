@@ -25,7 +25,7 @@ T PrattParser<T>::parse(int rbp) {
     std::unique_ptr<Token<T>> t = std::move(token);
     token = next();
 #ifdef DEBUG
-    std::cout << "Calling nud of " << t -> id();
+    std::cout <<  "Calling nud of " << t -> id();
     std::cout << " (token.lbp = " << token -> lbp() << ", rbp = " << rbp << ")" << std::endl;
 #endif
     T left = t -> nud(*this); /* value for terminals, result of func. call otherwise */
@@ -44,6 +44,11 @@ T PrattParser<T>::parse(int rbp) {
 template <typename T>
 const std::string PrattParser<T>::next_token_as_string() const {
     return str.substr(token -> start_position, token -> length);
+}
+
+template <typename T>
+const Token<T>& PrattParser<T>::next_token() const {
+    return *token; // slicing is done here 
 }
 
 template <typename T>

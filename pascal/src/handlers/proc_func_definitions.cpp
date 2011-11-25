@@ -3,9 +3,6 @@
 
 /* TODO:
  *
- * functions
- *
- * proc/func definitions
  * -------------------------------------------------------------------
  * use unique_ptrs instead of shared_ptr ???
  *

@@ -23,6 +23,7 @@ class PrattParser {
         PrattParser(const std::string&, const SymbolDict<T>&);
        
         T parse(int rbp = 0);
+        const Token<T>& next_token() const;
         const std::string next_token_as_string() const;
         PrattParser<T>& advance();
         PrattParser<T>& advance(const std::string& s);

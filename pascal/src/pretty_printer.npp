@@ -3,7 +3,7 @@ NumberNode -> println <value>;
 IdentifierNode -> print 'IDENTIFIER ', no_indent println <name>;
 IdentifierListNode -> println 'IDENTIFIER LIST:', indented visit_children;
 ConstantNode -> println 'CONSTANT', indented visit child;
-StringNode -> print 'STRING LITERAL: ', println <str>;
+StringNode -> print 'STRING LITERAL: ', no_indent println <str>;
 EnumeratedTypeNode -> println 'ENUMERATED TYPE:', indented visit identifiers;
 PointerTypeNode -> print 'POINTER TYPE: ', no_indent visit type;
 RecordTypeNode -> println 'RECORD TYPE', indented visit child;
@@ -107,4 +107,14 @@ ParameterListNode -> visit_children;
 FunctionHeadingNode -> println 'FUNCTION HEADING:',
                        indented { print 'NAME: ', no_indent println <name>,
                                   println 'FORMAL PARAMETERS:', indented visit params,
-                                  print 'RETURN TYPE: ', no_indent visit return_type }
+                                  print 'RETURN TYPE: ', no_indent visit return_type };
+ProcedureNode -> println 'PROCEDURE DECLARATION:',
+                 indented { indented visit heading,
+                            println 'BODY:', indented visit body };
+FunctionNode -> println 'FUNCTION DECLARATION:',
+                indented { indented visit heading,
+                           println 'BODY:', indented visit body };
+ProcedureForwardDeclNode -> println 'PROCEDURE FORWARD DECLARATION:', indented visit heading;
+FunctionForwardDeclNode -> println 'FUNCTION FORWARD DECLARATION:', indented visit heading;
+BlockNode -> println 'DECLARATION PART:', indented visit declarations,
+             println 'STATEMENT PART:', indented visit statements
