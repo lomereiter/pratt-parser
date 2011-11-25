@@ -1,0 +1,6 @@
+Implementation of Pratt parser in C++11.
+Materials on that:
+    http://javascript.crockford.com/tdop/tdop.html
+    http://effbot.org/zone/simple-top-down-parsing.htm
+    http://higherlogics.blogspot.com/2009/11/extensible-statically-typed-pratt.html
+    Vaughan Pratt - Top Down Operator Precedence
