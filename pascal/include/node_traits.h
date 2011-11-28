@@ -38,6 +38,9 @@ namespace node_traits {
             /// Represents a list of convertible types which can be used with utils::append
             typedef type<_ConvertibleTo...> list;
 
+            /// Type to be converted to
+            typedef _Node node_type;
+
             AreConvertibleTo() {
                 this->template Visits<AreConvertibleTo<_Node, _ConvertibleTo...>, _ConvertibleTo...>();
             }
@@ -73,6 +76,23 @@ namespace node_traits {
         
         using utils::type;
         using namespace visitors;
+
+        template <typename... ConversionLists>
+        struct ConversionTable {
+            typedef type<typename ConversionLists::node_type...> Keys;
+            typedef type<type<typename ConversionLists::node_type, ConversionLists>...> Table;
+
+            template <typename T>
+            struct has_key {
+                enum { value = utils::belongs_to<T, Keys>::value };
+            };
+
+            template <typename T>
+            struct take {
+                typedef typename utils::typemap::find<T, Table>::type type;
+            };
+        };
+
         struct dummy_type {};
 
         typedef AreConvertibleTo< dummy_type,
@@ -83,9 +103,14 @@ namespace node_traits {
 
         typedef AreConvertibleTo< dummy_type,
             utils::append<  IsUST::list,
-            utils::append<  IsIndexType::list,
-                PointerTypeNode, PackedTypeNode
+            utils::append<  IsIndexType::list, PointerTypeNode, PackedTypeNode
                          >::list>::list> IsType;
+
+        typedef AreConvertibleTo< dummy_type,
+                UCArraySchemaNode, PCArraySchemaNode> IsConformantArraySchema;
+
+        typedef AreConvertibleTo< dummy_type,
+                utils::append< IsConformantArraySchema::list, IdentifierNode>::list> IsParamType;
 
         typedef AreConvertibleTo< VariableNode,
             IdentifierNode, IndexedVariableNode, ReferencedVariableNode,
@@ -96,47 +121,58 @@ namespace node_traits {
                 OperationNode, StringNode, NumberNode, SetNode, 
                 SignNode, FunctionDesignatorNode>::list> IsExpr;
 
-        typedef AreConvertibleTo< SetExpressionNode,
-            utils::append<  IsExpr::list, SubrangeNode>::list> IsSetExpr;
+        typedef ConversionTable<
+            IsIndexType, IsVar, IsExpr,
 
-        typedef AreConvertibleTo< StatementNode,
+            AreConvertibleTo< SetExpressionNode,
+                utils::append<  IsExpr::list, SubrangeNode>::list>,
+
+            AreConvertibleTo< StatementNode,
                 AssignmentStatementNode, CompoundStatementNode, EmptyNode,
                 WhileStatementNode, RepeatStatementNode, ForStatementNode,
-
                 IdentifierNode, FunctionDesignatorNode, // <- indistinguishable during parsing
+                IfThenNode, IfThenElseNode, WithStatementNode, CaseStatementNode,
+                WriteNode, WriteLineNode>,
 
-                IfThenNode, IfThenElseNode,
-                WithStatementNode, CaseStatementNode,
-                WriteNode, WriteLineNode> IsStatement;
-
-        typedef AreConvertibleTo< dummy_type,
-                UCArraySchemaNode, PCArraySchemaNode> IsConformantArraySchema;
-
-        typedef AreConvertibleTo< dummy_type,
-                utils::append< IsConformantArraySchema::list, IdentifierNode>::list> IsParamType;
-
-        typedef AreConvertibleTo< ParameterNode,
+            AreConvertibleTo< ParameterNode,
                 VariableParameterNode, ValueParameterNode, 
-                ProcedureHeadingNode, FunctionHeadingNode> IsParameterNode;
+                ProcedureHeadingNode, FunctionHeadingNode>,
 
-        typedef AreConvertibleTo< DeclarationNode,
+            AreConvertibleTo< DeclarationNode,
                 VariableSectionNode, TypeSectionNode, ConstSectionNode,
                 FunctionNode, FunctionForwardDeclNode,
-                ProcedureNode, ProcedureForwardDeclNode> IsDeclaration;
+                ProcedureNode, ProcedureForwardDeclNode>
+                               > conversions;
 
-        bool __is_convertible_helper(type<ExpressionNode>,     const PNode&);
-        bool __is_convertible_helper(type<SetExpressionNode>,  const PNode&);
-        bool __is_convertible_helper(type<VariableNode>,       const PNode&);
-        bool __is_convertible_helper(type<IndexTypeNode>,      const PNode&);
-        bool __is_convertible_helper(type<StatementNode>,      const PNode&);
-        bool __is_convertible_helper(type<ConstantNode>,       const PNode&);
-        bool __is_convertible_helper(type<ParameterNode>,      const PNode&);
-        bool __is_convertible_helper(type<DeclarationNode>,    const PNode&);
+        template <typename NodeType, bool has_conversions> struct is_convertible_helper;
 
-        template <typename _Node>
-        bool __is_convertible_helper(type<_Node>, const PNode&) { 
-            return false;
-        }
+        template <typename NodeType>
+        struct is_convertible_helper<NodeType, false> {
+            typedef struct { 
+                bool operator()(const PNode&) { 
+                    return false; 
+                }
+            } type;
+        };
+
+        template <typename NodeType>
+        struct is_convertible_helper<NodeType, true> {
+            typedef typename conversions::take<NodeType>::type type;
+        };
+
+        template <>
+        struct is_convertible_helper<ConstantNode, true> {
+            typedef struct {
+                bool operator()(const PNode& node) {
+                    static AreConvertibleTo<ConstantNode,
+                        StringNode, NumberNode, IdentifierNode> is_surely_constant;
+                    return is_surely_constant(node) ||
+                           ( has_type<SignNode>(node) &&
+                             is_surely_constant(
+                                 std::static_pointer_cast<SignNode>(node) -> child) );
+                }
+            } type;
+        };
 
     } // namespace detail
 
@@ -145,22 +181,20 @@ namespace node_traits {
     static detail::IsConformantArraySchema is_conformant_array_schema;
     static detail::IsParamType is_parameter_type;
 
+    template <typename _Node> struct there_exist_coercions_to { 
+        enum { value = detail::conversions::has_key<_Node>::value }; 
+    };
+
+    template <> struct there_exist_coercions_to<ConstantNode> { enum { value = true }; };
+
     template <typename _Node>
     bool is_convertible_to(const PNode& node) { 
         if (node -> tag() == node_traits::get_tag_value<_Node>())
             return true;
-        return detail::__is_convertible_helper(detail::type<_Node>(), node);
+        static typename detail::is_convertible_helper<
+            _Node, there_exist_coercions_to<_Node>::value>::type checker;
+        return checker(node);
     }
-
-    template <typename _Node> struct there_exist_coercions_to       { enum { value = 0 }; };
-    template <> struct there_exist_coercions_to<IndexTypeNode>      { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ConstantNode>       { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ExpressionNode>     { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<SetExpressionNode>  { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<StatementNode>      { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<VariableNode>       { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ParameterNode>      { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<DeclarationNode>    { enum { value = 1 }; };
 
     template <typename T> struct list_of { typedef ListOf<T> type; };
     
@@ -169,7 +203,6 @@ namespace node_traits {
         return has_type<typename node_traits::list_of<T>::type>(node) ||
                is_convertible_to<T>(node);
     }
-
  
 } // namespace node_traits
 

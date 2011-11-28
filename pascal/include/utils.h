@@ -18,31 +18,36 @@ namespace utils {
         enum { value = belongs_to<T, Tail...>::value };
     };
 
+    template <typename T, typename... Types>
+    struct belongs_to<T, type<Types...>> {
+        enum { value = belongs_to<T, Types...>::value };
+    };
+
     namespace detail {
         template <typename T, typename List> struct append_one;
         template <typename T, typename... Tail>
         struct append_one <T, type<Tail...>>  {
             typedef type<T, Tail...> list;
         };
-
-        template <typename T> struct head;
-        template <typename T, typename... Tail>
-        struct head<type<T, Tail...>> {
-            typedef T type;
-        };
-        
-        template <typename T> struct tail;
-        template <typename T, typename... Tail>
-        struct tail<type<T, Tail...>> {
-            typedef type<Tail...> list;
-        };
     }
+
+    template <typename T> struct head;
+    template <typename T, typename... Tail>
+    struct head<type<T, Tail...>> {
+        typedef T type;
+    };
+    
+    template <typename T> struct tail;
+    template <typename T, typename... Tail>
+    struct tail<type<T, Tail...>> {
+        typedef type<Tail...> list;
+    };
 
     template <typename T, typename... Tail>
     struct append {
         typedef typename detail::append_one< 
-                             typename detail::head<T>::type,
-                             typename append< typename detail::tail<T>::list,
+                             typename head<T>::type,
+                             typename append< typename tail<T>::list,
                                                        Tail...
                                             >::list
                                            >::list list;
@@ -62,6 +67,22 @@ namespace utils {
     struct append <type<>, type<Tail...>> {
         typedef type<Tail...> list;
     };
-}
 
+    namespace typemap {
+        /// Table is type<type<K1, V1>, type<K2, V2>, ...>
+        template <typename K, typename Table> struct find; 
+
+        template <typename K> struct find<K, type<>> {};
+
+        template <typename K, typename V, typename... Tail> 
+        struct find<K, type<type<K, V>, Tail...>> { 
+            typedef V type; 
+        };
+
+        template <typename K, typename Head, typename... Tail>
+        struct find<K, type<Head, Tail...>> { 
+            typedef typename find<K, utils::type<Tail...>>::type type;
+        };
+    }
+}
 #endif

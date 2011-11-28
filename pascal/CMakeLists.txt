@@ -44,7 +44,6 @@ set (SOURCES
         src/handlers/proc_func_definitions.cpp
         src/node.cpp
         src/node_tags.cpp
-        src/node_traits.cpp
         src/pretty_printer.cpp
         src/test.cpp
         src/operator.cpp

@@ -116,7 +116,7 @@ ProcedureNode -> println 'PROCEDURE DECLARATION:',
                  indented { indented visit heading,
                             println 'BODY:', indented visit body };
 FunctionNode -> println 'FUNCTION DECLARATION:',
-                indented { indented visit heading,
+                indented { visit heading,
                            println 'BODY:', indented visit body };
 ProcedureForwardDeclNode -> println 'PROCEDURE FORWARD DECLARATION:', indented visit heading;
 FunctionForwardDeclNode -> println 'FUNCTION FORWARD DECLARATION:', indented visit heading;
