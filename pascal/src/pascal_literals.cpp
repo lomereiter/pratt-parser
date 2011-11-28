@@ -1,6 +1,8 @@
 #include <string>
 #include <sstream>
 
+#include "pascal_literals.h"
+
 namespace pascal {
 
     size_t number_scanner(const std::string& str, size_t pos) {
@@ -8,6 +10,11 @@ namespace pascal {
         if (i >= str.length() || !isdigit(str[i])) return pos;
         while (i < str.length() && isdigit(str[i])) 
             ++i; // reading digits before dot
+#ifdef PASCAL_6000
+        if (i < str.length() && str[i] == 'b') { // octal numbers
+            return ++i;
+        }
+#endif
         if (i < str.length() && str[i] == '.') { // if dot is presented
             ++i;
             if (i >= str.length() || !isdigit(str[i])) return i - 1;

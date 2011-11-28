@@ -1,6 +1,12 @@
 //#include "pascal_grammar.h"
 #include "ast_visitors.h"
 
+#ifdef PRINT_DEBUG
+#include <iostream>
+using std::cout;
+using std::endl;
+#endif
+
 namespace pascal_grammar {
 
     void add_statements(PascalGrammar& g) {
@@ -16,23 +22,41 @@ namespace pascal_grammar {
                     return std::make_shared<AssignmentStatementNode>(var, expr);
                 });
 
+       static auto parse_statement_sequence = [&g]() -> PNode {
+           PrattParser<PNode>& p = *(g.parser);
+           std::forward_list<PNode> statements;
+           while (true) {
+               auto next = p.next_token_as_string();
+               if (next == ";") { // some support for empty statements
+                   p.advance();
+               }
+               next = p.next_token_as_string();
+               if (next == "end" || next == "until")
+                   break;
+               PNode statement = p.parse(0);
+               if (!node_traits::is_convertible_to<StatementNode>(statement))
+                   g.error("expected statement");
+               statements.push_front(statement);
+               next = p.next_token_as_string();
+               if (next != ";") {
+                   break; // handling errors is duty of the caller
+               }
+           }
+           statements.reverse();
+           return std::make_shared<StatementListNode>(std::move(statements));
+       };
+
+
        g.add_symbol_to_dict("begin", 1)
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
-            if (p.next_token_as_string() == "end")
-                g.error("expected non-empty statement-sequence after 'begin'");
-
-            PascalGrammar::lbp_guard sl_guard(*(g.semicolon), 1);
+#ifdef PRINT_DEBUG
+            cout << "ENTERING BEGIN" << endl;
+#endif
             PascalGrammar::lbp_guard end_guard(*(g.end), 0);
             PascalGrammar::lbp_guard dot_guard(*(g.dot), 1000);
 
-            PascalGrammar::behaviour_guard<RightAssociative> sb_guard(*(g.semicolon),
-                [&g](PNode x, PNode y) {
-                    return ListVisitor<StatementNode>(x, y, &g, "statement")
-                           .get_expression();
-                });
-            PNode statements = p.parse(0);
-            if (!node_traits::is_list_of<StatementNode>(statements))
-                g.error("expected statement-sequence after 'begin'");
+            PNode statements = parse_statement_sequence();
+
             g.advance("end", "expected 'end' after statement-sequence");
             return std::make_shared<CompoundStatementNode>(statements);
         };
@@ -40,24 +64,28 @@ namespace pascal_grammar {
        g.add_symbol_to_dict("do", 0);
        g.add_symbol_to_dict("while", 1)
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
+#ifdef PRINT_DEBUG
+            cout << "ENTERING WHILE LOOP" << endl;
+#endif
             PNode condition = p.parse(0);
             if (!node_traits::is_convertible_to<ExpressionNode>(condition))
                 g.error("expected expression after 'while'");
             g.advance("do", "expected 'do' after expression");
             PNode body = p.parse(1);
             if (!node_traits::is_convertible_to<StatementNode>(body))
-                g.error("expected statement-sequence after 'do'");
+                g.error("expected statement after 'do'");
             return std::make_shared<WhileStatementNode>(condition, body);
         };
 
        g.add_symbol_to_dict("until", 0);
        g.add_symbol_to_dict("repeat", 1)
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
-            PNode body = p.parse(1);
-            if (!node_traits::is_list_of<StatementNode>(body))
-                g.error("expected statement-sequence after 'repeat'");
+#ifdef PRINT_DEBUG
+            cout << "ENTERING REPEAT LOOP" << endl;
+#endif
+            PNode body = parse_statement_sequence();
             g.advance("until", "expected 'until' after statement-sequence");
-            PNode condition = p.parse(0);
+            PNode condition = p.parse(1); // stop before semicolon
             if (!node_traits::is_convertible_to<ExpressionNode>(condition))
                 g.error("expected expression after 'until'");
             return std::make_shared<RepeatStatementNode>(body, condition);
@@ -67,6 +95,9 @@ namespace pascal_grammar {
        g.add_symbol_to_dict("downto", 0);
        g.add_symbol_to_dict("for", 1)
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
+#ifdef PRINT_DEBUG
+            cout << "ENTERING FOR LOOP" << endl;
+#endif
             PNode assignment = p.parse(0);
             if (!node_traits::has_type<AssignmentStatementNode>(assignment))
                 g.error("expected assignment-statement after 'for'");
@@ -100,6 +131,9 @@ namespace pascal_grammar {
        g.add_symbol_to_dict("else", 0);
        g.add_symbol_to_dict("if", 1)
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
+#ifdef PRINT_DEBUG
+            cout << "ENTERING IF STATEMENT" << endl;
+#endif
             PNode expr = p.parse(1);
             if (!node_traits::is_convertible_to<ExpressionNode>(expr))
                 g.error("expected expression after 'if'");
@@ -111,9 +145,14 @@ namespace pascal_grammar {
                 return std::make_shared<IfThenNode>(expr, st);
             } else {
                 p.advance();
-                PNode _else = p.parse(1);
-                if (!node_traits::is_convertible_to<StatementNode>(st))
-                    g.error("expected statement after 'else'");
+                PNode _else;
+                if (p.next_token_as_string() == ";") { // empty statement
+                    _else = std::make_shared<EmptyNode>();
+                } else {
+                    _else = p.parse(1);
+                    if (!node_traits::is_convertible_to<StatementNode>(st))
+                        g.error("expected statement after 'else'");
+                }
                 return std::make_shared<IfThenElseNode>(expr, st, _else);
             }
         };
@@ -121,6 +160,9 @@ namespace pascal_grammar {
        g.add_symbol_to_dict("do", 0);
        g.add_symbol_to_dict("with", 1)
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
+#ifdef PRINT_DEBUG
+            cout << "ENTERING WITH STATEMENT" << endl;
+#endif
             PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma),
                 [&g](PNode left, PNode right) {
                     return ListVisitor<VariableNode>(left, right, &g, "record variable")
@@ -138,6 +180,9 @@ namespace pascal_grammar {
 
        g.add_symbol_to_dict("case", 1)
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
+#ifdef PRINT_DEBUG
+            cout << "ENTERING CASE STATEMENT" << endl;
+#endif
             PNode expr = p.parse(0);
             if (!node_traits::is_convertible_to<ExpressionNode>(expr))
                 g.error("expected expression after 'case'");
@@ -185,6 +230,79 @@ namespace pascal_grammar {
             limbs.reverse();
             return std::make_shared<CaseStatementNode>(expr,
                     std::make_shared<CaseLimbListNode>(std::move(limbs)));
+        };
+
+       auto parse_output_list = [&g]() -> PNode {
+            PrattParser<PNode>& p = *(g.parser);
+            PascalGrammar::lbp_guard comma_guard(*(g.comma), 0);
+            PascalGrammar::lbp_guard colon_guard(*(g.colon), 0);
+            std::forward_list<PNode> output;
+            do {
+                PNode val = p.parse(0);
+                if (!node_traits::is_convertible_to<ExpressionNode>(val))
+                    g.error("expected expression as output value");
+
+                output.push_front(val);
+                PNode& last_value = output.front();
+
+                auto next = p.next_token_as_string();
+                if (next == ",") {
+                    p.advance();
+                    continue;
+                }
+                else if (next == ")") {
+                    break;
+                }
+
+                if (next != ":")
+                    g.error("expected ':', ',' or ')'");
+
+                p.advance(); // skip ':'
+                PNode field_width, fraction_length;
+                field_width = p.parse(0);
+                if (!node_traits::is_convertible_to<ExpressionNode>(field_width))
+                    g.error("expected expression as field width");
+                if (p.next_token_as_string() == ":") {
+                    p.advance();
+                    fraction_length = p.parse(0);
+                    if (!node_traits::is_convertible_to<ExpressionNode>(fraction_length))
+                        g.error("expected expression as fraction length");
+                }
+                last_value = std::make_shared<OutputValueNode>(last_value, field_width, 
+                                         fraction_length ? 
+                                         fraction_length : 
+                                         std::make_shared<OutputValueNode>(last_value,
+                                             field_width, std::make_shared<EmptyNode>()));
+                next = p.next_token_as_string();
+                if (next == ",") {
+                    p.advance();
+                    continue;
+                }
+                else if (next == ")") {
+                    break;
+                }
+                else g.error("expected ',' or ')' after output value");
+            } while (true);
+            output.reverse();
+            return std::make_shared<OutputValueListNode>(std::move(output));
+       };
+
+       g.add_symbol_to_dict("write", 1)
+        .nud = [&g, parse_output_list](PrattParser<PNode>& p) -> PNode {
+            g.advance("(", "expected list of values to output");
+            PNode output = parse_output_list();
+            g.advance(")", "expected closing ')' in 'write'");
+            return std::make_shared<WriteNode>(output);
+        };
+
+       g.add_symbol_to_dict("writeln", 1)
+        .nud = [&g, parse_output_list](PrattParser<PNode>& p) -> PNode {
+            if (p.next_token_as_string() != "(")
+                return std::make_shared<WriteLineNode>(std::make_shared<OutputValueListNode>());
+            p.advance();
+            PNode output = parse_output_list();
+            g.advance(")", "expected closing ')' in 'writeln'");
+            return std::make_shared<WriteLineNode>(output);
         };
     }
 }

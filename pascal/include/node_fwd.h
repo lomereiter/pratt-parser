@@ -5,6 +5,7 @@ struct Node;
 
 template <typename T> struct ListOf;
 
+struct EmptyNode;
 struct NumberNode;
 
 struct IdentifierNode;
@@ -16,7 +17,7 @@ struct SignNode;
 struct ConstantNode;
 typedef ListOf<ConstantNode> ConstantListNode;
 
-struct SubrangeTypeNode;
+struct SubrangeNode;
 struct EnumeratedTypeNode;
 struct PointerTypeNode;
 
@@ -43,6 +44,9 @@ typedef ListOf<DeclarationNode> DeclarationListNode;
 
 struct ExpressionNode;
 typedef ListOf<ExpressionNode> ExpressionListNode;
+
+struct SetExpressionNode;
+typedef ListOf<SetExpressionNode> SetExpressionListNode;
 
 struct SetNode;
 struct IndexedVariableNode;
@@ -91,5 +95,24 @@ struct FunctionNode;
 struct ProcedureForwardDeclNode;
 struct FunctionForwardDeclNode;
 struct BlockNode;
+
+struct OutputValueNode;
+typedef ListOf<OutputValueNode> OutputValueListNode;
+
+struct WriteNode;
+struct WriteLineNode;
+
+struct RecordSectionNode;
+typedef ListOf<RecordSectionNode> FixedPartNode;
+
+struct FieldVariantNode;
+typedef ListOf<FieldVariantNode> VariantPartNode;
+
+struct FieldListNode;
+
+#ifdef PASCAL_6000
+struct ProcedureExternDeclNode;
+struct FunctionExternDeclNode;
+#endif
 
 #endif

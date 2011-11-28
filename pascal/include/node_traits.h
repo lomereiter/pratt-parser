@@ -79,7 +79,7 @@ namespace node_traits {
             RecordTypeNode, SetTypeNode, FileTypeNode, ArrayTypeNode> IsUST;
 
         typedef AreConvertibleTo< IndexTypeNode,
-            SubrangeTypeNode, EnumeratedTypeNode, IdentifierNode> IsIndexType;
+            SubrangeNode, EnumeratedTypeNode, IdentifierNode> IsIndexType;
 
         typedef AreConvertibleTo< dummy_type,
             utils::append<  IsUST::list,
@@ -96,14 +96,18 @@ namespace node_traits {
                 OperationNode, StringNode, NumberNode, SetNode, 
                 SignNode, FunctionDesignatorNode>::list> IsExpr;
 
+        typedef AreConvertibleTo< SetExpressionNode,
+            utils::append<  IsExpr::list, SubrangeNode>::list> IsSetExpr;
+
         typedef AreConvertibleTo< StatementNode,
-                AssignmentStatementNode, CompoundStatementNode,
+                AssignmentStatementNode, CompoundStatementNode, EmptyNode,
                 WhileStatementNode, RepeatStatementNode, ForStatementNode,
 
                 IdentifierNode, FunctionDesignatorNode, // <- indistinguishable during parsing
 
                 IfThenNode, IfThenElseNode,
-                WithStatementNode, CaseStatementNode> IsStatement;
+                WithStatementNode, CaseStatementNode,
+                WriteNode, WriteLineNode> IsStatement;
 
         typedef AreConvertibleTo< dummy_type,
                 UCArraySchemaNode, PCArraySchemaNode> IsConformantArraySchema;
@@ -120,13 +124,14 @@ namespace node_traits {
                 FunctionNode, FunctionForwardDeclNode,
                 ProcedureNode, ProcedureForwardDeclNode> IsDeclaration;
 
-        bool __is_convertible_helper(type<ExpressionNode>,  const PNode&);
-        bool __is_convertible_helper(type<VariableNode>,    const PNode&);
-        bool __is_convertible_helper(type<IndexTypeNode>,   const PNode&);
-        bool __is_convertible_helper(type<StatementNode>,   const PNode&);
-        bool __is_convertible_helper(type<ConstantNode>,    const PNode&);
-        bool __is_convertible_helper(type<ParameterNode>,   const PNode&);
-        bool __is_convertible_helper(type<DeclarationNode>, const PNode&);
+        bool __is_convertible_helper(type<ExpressionNode>,     const PNode&);
+        bool __is_convertible_helper(type<SetExpressionNode>,  const PNode&);
+        bool __is_convertible_helper(type<VariableNode>,       const PNode&);
+        bool __is_convertible_helper(type<IndexTypeNode>,      const PNode&);
+        bool __is_convertible_helper(type<StatementNode>,      const PNode&);
+        bool __is_convertible_helper(type<ConstantNode>,       const PNode&);
+        bool __is_convertible_helper(type<ParameterNode>,      const PNode&);
+        bool __is_convertible_helper(type<DeclarationNode>,    const PNode&);
 
         template <typename _Node>
         bool __is_convertible_helper(type<_Node>, const PNode&) { 
@@ -147,14 +152,15 @@ namespace node_traits {
         return detail::__is_convertible_helper(detail::type<_Node>(), node);
     }
 
-    template <typename _Node> struct there_exist_coercions_to    { enum { value = 0 }; };
-    template <> struct there_exist_coercions_to<IndexTypeNode>   { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ConstantNode>    { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ExpressionNode>  { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<StatementNode>   { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<VariableNode>    { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<ParameterNode>   { enum { value = 1 }; };
-    template <> struct there_exist_coercions_to<DeclarationNode> { enum { value = 1 }; };
+    template <typename _Node> struct there_exist_coercions_to       { enum { value = 0 }; };
+    template <> struct there_exist_coercions_to<IndexTypeNode>      { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<ConstantNode>       { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<ExpressionNode>     { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<SetExpressionNode>  { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<StatementNode>      { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<VariableNode>       { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<ParameterNode>      { enum { value = 1 }; };
+    template <> struct there_exist_coercions_to<DeclarationNode>    { enum { value = 1 }; };
 
     template <typename T> struct list_of { typedef ListOf<T> type; };
     

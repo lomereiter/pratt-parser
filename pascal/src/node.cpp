@@ -24,7 +24,7 @@ IdentifierNode::IdentifierNode(std::string s) : name(s) {}
 StringNode::StringNode(std::string s) : str(s) {}
 ConstantNode::ConstantNode(const PNode& node) : child(node) {}
 
-SubrangeTypeNode::SubrangeTypeNode(const PNode& lb, const PNode& ub) : 
+SubrangeNode::SubrangeNode(const PNode& lb, const PNode& ub) : 
         lower_bound(lb), upper_bound(ub) {}
 
 EnumeratedTypeNode::EnumeratedTypeNode(const PNode& id_list) 
@@ -51,6 +51,7 @@ TypeDefinitionNode::TypeDefinitionNode(const PNode& name, const PNode& type) :
 PackedTypeNode::PackedTypeNode(const PNode& type) : type(type) {}
 DeclarationNode::DeclarationNode(const PNode& child) : child(child) {}
 ExpressionNode::ExpressionNode(const PNode& child) : child(child) {}
+SetExpressionNode::SetExpressionNode(const PNode& child) : child(child) {}
 SetNode::SetNode(const PNode& elems) : elements(elems) {}
 
 IndexedVariableNode::IndexedVariableNode(const PNode& array_var, const PNode& indices) :
@@ -134,6 +135,26 @@ FunctionNode::FunctionNode(const PNode& heading, const PNode& body) :
 
 ProcedureForwardDeclNode::ProcedureForwardDeclNode(const PNode& heading) : heading(heading) {}
 FunctionForwardDeclNode::FunctionForwardDeclNode(const PNode& heading) : heading(heading) {}
+#ifdef PASCAL_6000
+ProcedureExternDeclNode::ProcedureExternDeclNode(const PNode& heading) : heading(heading) {}
+FunctionExternDeclNode::FunctionExternDeclNode(const PNode& heading) : heading(heading) {}
+#endif
 
 BlockNode::BlockNode(const PNode& declarations, const PNode& statements) :
     declarations(declarations), statements(statements) {}
+
+OutputValueNode::OutputValueNode(const PNode& expression, const PNode& field_width,
+                                 const PNode& fraction_length) :
+    expression(expression), field_width(field_width), fraction_length(fraction_length) {}
+
+WriteNode::WriteNode(const PNode& output_list) : output_list(output_list) {}
+WriteLineNode::WriteLineNode(const PNode& output_list) : output_list(output_list) {}
+
+FieldVariantNode::FieldVariantNode(const PNode& case_labels, const PNode& fields) :
+    case_labels(case_labels), fields(fields) {}
+
+RecordSectionNode::RecordSectionNode(std::shared_ptr<VariableDeclNode>&& var_decl) :
+    id_list(std::move(var_decl -> id_list)), type(std::move(var_decl -> type)) {}
+
+FieldListNode::FieldListNode(const PNode& fixed_part, const PNode& variant_part) :
+    fixed_part(fixed_part), variant_part(variant_part) {}

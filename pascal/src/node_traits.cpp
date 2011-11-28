@@ -8,6 +8,11 @@ bool __is_convertible_helper(type<ExpressionNode>, const PNode& node) {
     return is_expr(node);
 }
 
+bool __is_convertible_helper(type<SetExpressionNode>, const PNode& node) {
+    static IsSetExpr is_set_expr;
+    return is_set_expr(node);
+}
+
 bool __is_convertible_helper(type<VariableNode>, const PNode& node) {
     static IsVar is_var;
     return is_var(node);

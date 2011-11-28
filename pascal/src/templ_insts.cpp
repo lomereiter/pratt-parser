@@ -1,4 +1,3 @@
-#define DEBUG
 #include "parser_impl.h"
 
 #include <memory>
@@ -8,7 +7,7 @@ struct Node;
 
 namespace token {
 
-    /// Specialization to treat {...} as white space
+    /// Specialization to treat {...} and (* ... *) as white space
     template <>
     struct SkipWhiteSpace<std::shared_ptr<Node>> {
         void operator()(const std::string& s, size_t& start, 
@@ -24,6 +23,14 @@ namespace token {
                         ++start;
                     }
                     ++start; // skip '}'
+                } else if (s[start] == '(' && (start + 1) < s.length() && s[start+1]=='*') {
+                    start += 2;
+                    while (start < s.length() && 
+                            !( s[start] == '*' && (start + 1) < s.length() && s[start + 1] == ')')) {
+                        if (s[start] == '\n') last_new_line = start, ++new_lines;
+                        ++start;
+                    }
+                    start += 2; // skip '*)'
                 } else {
                     return;
                 }

@@ -50,6 +50,8 @@ set (SOURCES
         src/operator.cpp
         )
 
+add_definitions (-DPASCAL_6000)
+
 set (CMAKE_CXX_COMPILER "g++-4.6")
 
 set (CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall -pedantic" )

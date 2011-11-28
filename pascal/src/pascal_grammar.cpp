@@ -9,7 +9,6 @@
 #include "ast_visitors.h"
 //#include "syntax_error.h"
 //#include "node_traits.h"
-#include <iostream>
 using namespace grammar;
 
 
@@ -26,8 +25,12 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
 
 }
 
-PNode PascalGrammar::parse(const std::string& str) {
+PNode PascalGrammar::parse(const std::string& program) {
     static PascalGrammar pg;
+    std::string str = program;
+    for (auto& c : str) {
+        c = tolower(c);
+    }
     pg.parser = std::unique_ptr<PrattParser<PNode>>(
                     new PrattParser<PNode>( str, pg.get_symbols() )
                 );
@@ -66,6 +69,12 @@ PNode PascalGrammar::parse(const std::string& str) {
                             declarations.push_front(
                                     std::make_shared<ProcedureForwardDeclNode>(node));
                             pg.parser -> advance();
+#ifdef PASCAL_6000
+                    } else if (next == "extern") {
+                            declarations.push_front(
+                                    std::make_shared<ProcedureExternDeclNode>(node));
+                            pg.parser -> advance();
+#endif
                     } else {
                         declarations.push_front(std::make_shared<ProcedureNode>(node, operator()()));
                     }
@@ -79,6 +88,12 @@ PNode PascalGrammar::parse(const std::string& str) {
                             declarations.push_front(
                                     std::make_shared<FunctionForwardDeclNode>(node));
                             pg.parser -> advance();
+#ifdef PASCAL_6000
+                    } else if (next == "extern") {
+                            declarations.push_front(
+                                    std::make_shared<FunctionExternDeclNode>(node));
+                            pg.parser -> advance();
+#endif
                     } else {
                         declarations.push_front(std::make_shared<FunctionNode>(node, operator()()));
                     }
@@ -103,6 +118,12 @@ PNode PascalGrammar::parse(const std::string& str) {
                     std::move(statements));
         }
     } parse_block;
+
+    if (pg.parser -> next_token_as_string() == "program") { // FIXME: just skip without any checks
+        while (pg.parser -> next_token_as_string() != ";")
+            pg.parser -> advance();
+        pg.parser -> advance();
+    }
 
     PNode block = parse_block();
     pg.advance(".", "expected '.' after 'end'");

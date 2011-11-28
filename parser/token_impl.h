@@ -47,6 +47,9 @@ Token<T>::iterator::iterator(const std::string& s,
 }
 
 template <typename T>
+typename token::SkipWhiteSpace<T> Token<T>::iterator::skip_white_space;
+
+template <typename T>
 typename Token<T>::iterator& Token<T>::iterator::operator++() {
 
     skip_white_space(str, start, last_new_line_, current_line_);

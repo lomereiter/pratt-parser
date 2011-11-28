@@ -5,46 +5,56 @@
 #include "ast_visitors.h"
 
 namespace pascal_grammar {
+    namespace detail {
+        template <typename ExprType>
+        struct ExpressionListParser {
+            PNode operator()(PascalGrammar& g) {
+                PrattParser<PNode>& p = *(g.parser);
+                PascalGrammar::behaviour_guard<PascalGrammar::RightAssociative> 
+                comma_guard(*(g.comma),
+                    [&g](PNode x, PNode y) {
+                        return ListVisitor<ExprType>(x, y, &g, "expression")
+                               .get_expression();
+                    });
+
+                PNode elements = p.parse(40); /* must be less than lbp of subexpressions */
+
+                if (!node_traits::is_list_of<ExprType>(elements))
+                    g.error("expected list of expressions or subranges after '['");
+
+                return elements;
+            }
+        };
+    } // namespace detail
 
     void add_expressions(PascalGrammar& g) {
         
         typedef PascalGrammar::RightAssociative RightAssociative;
 
-        auto parse_expression_list_and_closing_bracket = 
-        [&g](PrattParser<PNode>& p) -> PNode {
-            PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma),
-                    [&g](PNode x, PNode y) {
-                        return ListVisitor<ExpressionNode>(x, y, &g, "expression")
-                               .get_expression();
-                    });
-
-            PNode elements = p.parse(40); /* must be less than lbp of subexpressions */
-
-            if (!node_traits::is_list_of<ExpressionNode>(elements))
-                g.error("expected list of expressions after '['");
-
-            g.advance("]", "expected ']' after list of expressions");
-            return elements;
-        };
-
+        
        g.add_symbol_to_dict("]", 0);
        g.add_symbol_to_dict("[", 1000) 
-        .nud = [parse_expression_list_and_closing_bracket](PrattParser<PNode>& p) -> PNode {
+        .nud = [&g](PrattParser<PNode>& p) -> PNode {
             if (p.next_token_as_string() == "]") {
                 p.advance();
                 return std::make_shared<SetNode>(
                         std::make_shared<ExpressionListNode>());
             }
-            return std::make_shared<SetNode>(parse_expression_list_and_closing_bracket(p));
+            static detail::ExpressionListParser<SetExpressionNode> parse_set_expressions;
+            PNode set = std::make_shared<SetNode>(parse_set_expressions(g));
+            g.advance("]", "expected ']' after list of expressions/subranges");
+            return set;
         };
 
        g.add_symbol_to_dict("[", 1000)/* big enough for parsing expressions like 'x + a[2]' */
-        .led = [&g, parse_expression_list_and_closing_bracket]
+        .led = [&g]
         (PrattParser<PNode>& p, PNode left) -> PNode {
             if (!node_traits::is_convertible_to<VariableNode>(left))
                 g.error("expected a variable before '['");
-            return std::make_shared<IndexedVariableNode>(left,
-                    parse_expression_list_and_closing_bracket(p));
+            static detail::ExpressionListParser<ExpressionNode> parse_indices;
+            PNode indices =  std::make_shared<IndexedVariableNode>(left, parse_indices(g));
+            g.advance("]", "expected ']' after list of indices");
+            return indices;
         };
 
        g.postfix("^", 1000, [&g](PNode node) -> PNode {

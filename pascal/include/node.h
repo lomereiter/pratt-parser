@@ -35,6 +35,8 @@ private:
     ListT lst;
 };
 
+struct EmptyNode : public VisitableNode<EmptyNode> {};
+
 struct OperationNode : public VisitableNode<OperationNode> {
     std::forward_list<PNode> args;
 
@@ -76,11 +78,11 @@ struct ConstantNode : public VisitableNode<ConstantNode> {
     ConstantNode(const PNode& node);
 };
 
-struct SubrangeTypeNode : public VisitableNode<SubrangeTypeNode> {
+struct SubrangeNode : public VisitableNode<SubrangeNode> {
     PNode lower_bound;
     PNode upper_bound;
 
-    SubrangeTypeNode(const PNode& lb, const PNode& ub);
+    SubrangeNode(const PNode& lb, const PNode& ub);
 };
 
 struct EnumeratedTypeNode : public VisitableNode<EnumeratedTypeNode> {
@@ -150,6 +152,11 @@ struct DeclarationNode : public VisitableNode<DeclarationNode> {
 struct ExpressionNode : public VisitableNode<ExpressionNode> {
     PNode child;
     ExpressionNode(const PNode& child);
+};
+
+struct SetExpressionNode : public VisitableNode<SetExpressionNode> {
+    PNode child;
+    SetExpressionNode(const PNode& child);
 };
 
 struct SetNode : public VisitableNode<SetNode> {
@@ -331,9 +338,56 @@ struct FunctionForwardDeclNode : public VisitableNode<FunctionForwardDeclNode> {
     FunctionForwardDeclNode(const PNode& heading);
 };
 
+#ifdef PASCAL_6000
+struct ProcedureExternDeclNode : public VisitableNode<ProcedureExternDeclNode> {
+    PNode heading;
+    ProcedureExternDeclNode(const PNode& heading);
+};
+
+struct FunctionExternDeclNode : public VisitableNode<FunctionExternDeclNode> {
+    PNode heading;
+    FunctionExternDeclNode(const PNode& heading);
+};
+#endif
+
 struct BlockNode : public VisitableNode<BlockNode> {
     PNode declarations;
     PNode statements;
     BlockNode(const PNode& declarations, const PNode& statements);
+};
+
+struct OutputValueNode : public VisitableNode<OutputValueNode> {
+    PNode expression;
+    PNode field_width;
+    PNode fraction_length;
+    OutputValueNode(const PNode& expr, const PNode& fw, const PNode& fraction_length);
+};
+
+struct WriteNode : public VisitableNode<WriteNode> {
+    PNode output_list;
+    WriteNode(const PNode& list);
+};
+
+struct WriteLineNode : public VisitableNode<WriteLineNode> {
+    PNode output_list;
+    WriteLineNode(const PNode& list);
+};
+
+struct RecordSectionNode : public VisitableNode<RecordSectionNode> { 
+    PNode id_list;
+    PNode type;
+    RecordSectionNode(std::shared_ptr<VariableDeclNode>&&);
+};
+
+struct FieldVariantNode : public VisitableNode<FieldVariantNode> {
+    PNode case_labels;
+    PNode fields;
+    FieldVariantNode(const PNode& case_labels, const PNode& fields);
+};
+
+struct FieldListNode : public VisitableNode<FieldListNode> {
+    PNode fixed_part;
+    PNode variant_part;
+    FieldListNode(const PNode& f, const PNode& v);
 };
 #endif

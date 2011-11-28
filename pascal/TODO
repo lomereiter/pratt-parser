@@ -1,7 +1,0 @@
-variant records;
-empty statements;
-objects;
-labels & gotos;
-input/output functions;
-program heading;
-...

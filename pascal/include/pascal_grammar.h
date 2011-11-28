@@ -2,6 +2,7 @@
 #define PASCAL_GRAMMAR_H
 
 #include "parser.h"
+
 #include "pascal_handlers.h"
 
 #include <memory>
@@ -14,12 +15,10 @@
 class PascalGrammar;
 typedef std::shared_ptr<Node> PNode;
 
-#include <iostream>
-
-
 namespace pascal_grammar {
     namespace detail {
         struct bound_specification_guard;
+        template <typename ExprType> struct ExpressionListParser;
         PNode parse_formal_parameter_list(PrattParser<PNode>&, PascalGrammar&);
     }
 }
@@ -37,6 +36,8 @@ class PascalGrammar : public grammar::Grammar<PNode> {
     friend PNode pascal_grammar::detail::parse_formal_parameter_list
                                        (PrattParser<PNode>&, PascalGrammar&);
     friend struct pascal_grammar::detail::bound_specification_guard;
+    friend struct pascal_grammar::detail::ExpressionListParser<ExpressionNode>;
+    friend struct pascal_grammar::detail::ExpressionListParser<SetExpressionNode>;
 
     Symbol<PNode> *comma, *semicolon, *sign_eq, 
                   *colon, *opening_bracket, *end,
