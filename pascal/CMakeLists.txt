@@ -53,7 +53,7 @@ add_definitions (-DPASCAL_6000)
 
 set (CMAKE_CXX_COMPILER "g++-4.6")
 
-set (CMAKE_CXX_FLAGS "-std=c++0x -O2 -Wall -pedantic" )
+set (CMAKE_CXX_FLAGS "-std=c++0x -O0 -g -Wall -pedantic" )
 
 add_executable (pp_gen pretty_printer_gen/pp_gen.cpp src/pascal_literals.cpp)
 

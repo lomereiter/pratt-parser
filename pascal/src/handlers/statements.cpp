@@ -7,6 +7,8 @@ using std::cout;
 using std::endl;
 #endif
 
+#include <limits>
+
 namespace pascal_grammar {
 
     void add_statements(PascalGrammar& g) {
@@ -22,6 +24,48 @@ namespace pascal_grammar {
                     return std::make_shared<AssignmentStatementNode>(var, expr);
                 });
 
+       static auto parse_statement = [&g]() -> PNode {
+           static auto process_if_identifier = [](PNode& node) {
+                if (node_traits::has_type<IdentifierNode>(node)) {
+                     // function/procedure call
+                    node = std::make_shared<FunctionDesignatorNode>(node,
+                               std::make_shared<ExpressionListNode>());
+                }
+           };
+
+           static auto statement_is_empty = [&g]() -> bool {
+               auto next = g.parser -> next_token_as_string();
+               return (next == ";" || next == "end" || next == "until" || next == "else");
+           };
+
+           PrattParser<PNode>& p = *(g.parser);
+           PascalGrammar::lbp_guard colon_lbp_guard(*(g.colon), 1);
+           PascalGrammar::led_guard colon_guard(*(g.colon),
+               [&g](PrattParser<PNode>& p, PNode left) -> PNode {
+                    if (!node_traits::is_convertible_to<IntegerNumberNode>(left))
+                        g.error("expected integer number as label");
+                    if (statement_is_empty())
+                        return std::make_shared<EmptyNode>();
+                    PNode node = p.parse(0);
+                    process_if_identifier(node);
+                    if (!node_traits::is_convertible_to<StatementNode>(node))
+                        g.error("expected statement");
+                    return std::make_shared<LabeledStatementNode>(left, node);
+               });
+
+           if (statement_is_empty())
+               return std::make_shared<EmptyNode>();
+           PNode node = p.parse(0);
+           process_if_identifier(node);
+           if (node_traits::has_type<IdentifierNode>(node)) {
+               node = std::make_shared<FunctionDesignatorNode>(node,
+                          std::make_shared<ExpressionListNode>());
+           }
+           if (!node_traits::is_convertible_to<StatementNode>(node))
+               g.error("expected statement");
+           return node;
+       };
+
        static auto parse_statement_sequence = [&g]() -> PNode {
            PrattParser<PNode>& p = *(g.parser);
            std::forward_list<PNode> statements;
@@ -33,9 +77,7 @@ namespace pascal_grammar {
                next = p.next_token_as_string();
                if (next == "end" || next == "until")
                    break;
-               PNode statement = p.parse(0);
-               if (!node_traits::is_convertible_to<StatementNode>(statement))
-                   g.error("expected statement");
+               PNode statement = parse_statement();
                statements.push_front(statement);
                next = p.next_token_as_string();
                if (next != ";") {
@@ -71,9 +113,7 @@ namespace pascal_grammar {
             if (!node_traits::is_convertible_to<ExpressionNode>(condition))
                 g.error("expected expression after 'while'");
             g.advance("do", "expected 'do' after expression");
-            PNode body = p.parse(1);
-            if (!node_traits::is_convertible_to<StatementNode>(body))
-                g.error("expected statement after 'do'");
+            PNode body = parse_statement();
             return std::make_shared<WhileStatementNode>(condition, body);
         };
 
@@ -98,7 +138,7 @@ namespace pascal_grammar {
 #ifdef PRINT_DEBUG
             cout << "ENTERING FOR LOOP" << endl;
 #endif
-            PNode assignment = p.parse(0);
+            PNode assignment = parse_statement();
             if (!node_traits::has_type<AssignmentStatementNode>(assignment))
                 g.error("expected assignment-statement after 'for'");
             auto _assignment = std::static_pointer_cast<AssignmentStatementNode>(assignment);
@@ -121,9 +161,7 @@ namespace pascal_grammar {
                 g.error(std::move(msg));
             }
             g.advance("do", "expected 'do' after final-expression");
-            PNode body = p.parse(1);
-            if (!node_traits::is_convertible_to<StatementNode>(body))
-                g.error("expected statement after 'do'");
+            PNode body = parse_statement();
             return std::make_shared<ForStatementNode>(_assignment, sign, final_expr, body);
         };
 
@@ -138,22 +176,12 @@ namespace pascal_grammar {
             if (!node_traits::is_convertible_to<ExpressionNode>(expr))
                 g.error("expected expression after 'if'");
             g.advance("then", "expected 'then'");
-            PNode st = p.parse(1);
-            if (!node_traits::is_convertible_to<StatementNode>(st))
-                g.error("expected statement after 'then'");
+            PNode st = parse_statement();
             if (p.next_token_as_string() != "else") {
                 return std::make_shared<IfThenNode>(expr, st);
             } else {
                 p.advance();
-                PNode _else;
-                if (p.next_token_as_string() == ";") { // empty statement
-                    _else = std::make_shared<EmptyNode>();
-                } else {
-                    _else = p.parse(1);
-                    if (!node_traits::is_convertible_to<StatementNode>(st))
-                        g.error("expected statement after 'else'");
-                }
-                return std::make_shared<IfThenElseNode>(expr, st, _else);
+                return std::make_shared<IfThenElseNode>(expr, st, parse_statement());
             }
         };
 
@@ -172,9 +200,7 @@ namespace pascal_grammar {
             if (!node_traits::is_list_of<VariableNode>(list))
                 g.error("expected list of record variables after 'with'");
             g.advance("do", "expected 'do' in with-statement");
-            PNode st = p.parse(1);
-            if (!node_traits::is_convertible_to<StatementNode>(st))
-                g.error("expected statement after 'do'");
+            PNode st = parse_statement();
             return std::make_shared<WithStatementNode>(list, st);
         };
 
@@ -194,13 +220,12 @@ namespace pascal_grammar {
                            .get_expression();
                 });
 
-            PascalGrammar::behaviour_guard<LeftAssociative> colon_guard(*(g.colon), 1,
-                [&g](PNode left, PNode right) -> PNode {
+            PascalGrammar::lbp_guard colon_lbp_guard(*(g.colon), 1);
+            PascalGrammar::led_guard colon_guard(*(g.colon),
+                [&g](PrattParser<PNode>& p, PNode left) -> PNode {
                     if (!node_traits::is_list_of<ConstantNode>(left))
                         g.error("expected list of constants before ':'");
-                    if (!node_traits::is_convertible_to<StatementNode>(right))
-                        g.error("expected statement after ':'");
-                    return std::make_shared<CaseLimbNode>(left, right);
+                    return std::make_shared<CaseLimbNode>(left, parse_statement());
                 });
 
             PascalGrammar::lbp_guard semicolon_guard(*(g.semicolon), 0);
@@ -304,5 +329,11 @@ namespace pascal_grammar {
             g.advance(")", "expected closing ')' in 'writeln'");
             return std::make_shared<WriteLineNode>(output);
         };
+
+      g.prefix("goto", std::numeric_limits<int>::max(), [&g](PNode node) -> PNode {
+            if (!node_traits::is_convertible_to<IntegerNumberNode>(node))
+                g.error("expected label");
+            return std::make_shared<GotoStatementNode>(node);
+          });
     }
 }

@@ -6,7 +6,13 @@ struct Node;
 template <typename T> struct ListOf;
 
 struct EmptyNode;
-struct NumberNode;
+
+struct UIntegerNumberNode;
+struct IntegerNumberNode;
+typedef ListOf<IntegerNumberNode> IntegerNumberListNode;
+
+struct URealNumberNode;
+struct RealNumberNode;
 
 struct IdentifierNode;
 typedef ListOf<IdentifierNode> IdentifierListNode;
@@ -115,4 +121,8 @@ struct ProcedureExternDeclNode;
 struct FunctionExternDeclNode;
 #endif
 
+struct LabeledStatementNode;
+struct LabelSectionNode;
+struct GotoStatementNode;
+struct FunctionIdentificationNode;
 #endif

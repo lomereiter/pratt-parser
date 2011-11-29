@@ -17,6 +17,7 @@ class PrattParser {
         const std::string& str;
         typename Token<T>::iterator token_iter;
         std::unique_ptr<Token<T>> token;
+        std::unique_ptr<Token<T>> prev_token;
         std::unique_ptr<Token<T>> next();
 
     public:

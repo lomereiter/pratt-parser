@@ -1,16 +1,6 @@
 //#include "pascal_grammar.h"
 #include "ast_visitors.h"
 
-/* TODO:
- *
- * -------------------------------------------------------------------
- * use unique_ptrs instead of shared_ptr ???
- *
- * error handling in OperationNode
- *
- * get rid of p.advance("...")
- */
-
 namespace pascal_grammar {
     namespace detail {
         struct bound_specification_guard {
@@ -194,7 +184,9 @@ namespace pascal_grammar {
 
               PNode params = std::make_shared<ParameterListNode>();
               auto next = p.next_token_as_string();
-              if (next != "(") {
+              if (next == ";") { // Function identification node
+                  return std::make_shared<FunctionIdentificationNode>(name);
+              } else if (next != "(") {
                   g.advance(":", "expected ':' in function heading");
               } else {
                   p.advance();

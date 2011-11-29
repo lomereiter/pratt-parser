@@ -23,7 +23,7 @@ namespace pascal_grammar {
                     g.error("expected a constant as the lower bound");
                 if (!node_traits::is_convertible_to<ConstantNode>(y))
                     g.error("expected a constant as the upper bound");
-                return std::make_shared<SubrangeNode>(x, y);
+                return std::make_shared<SubrangeTypeNode>(x, y);
             });
 
         g.prefix("^", 80, 
@@ -97,19 +97,21 @@ namespace pascal_grammar {
                     auto next = p.next_token_as_string();
                     if (next == ":") {
                         tag_field = std::move(type_id);
+                        p.advance();
                         type_id = p.parse(0);
                         if (!node_traits::has_type<IdentifierNode>(type_id))
                             g.error("expected type identifier");
                     }
                     g.advance("of", "expected 'of' in variant part");
-                    PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma), 90,
+                    PascalGrammar::lbp_guard comma_lbp_guard(*(g.comma), std::numeric_limits<int>::max());
+                    PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma),
                         [&g](PNode left, PNode right) -> PNode {
                         return ListVisitor<ConstantNode>(left, right, &g, "constant")
                                                         .get_expression();
                         });
                     std::forward_list<PNode> variants;
                     while (true) {
-                        PNode case_label_list = p.parse(89);
+                        PNode case_label_list = p.parse(std::numeric_limits<int>::max() - 1);
                         if (!node_traits::is_list_of<ConstantNode>(case_label_list))
                             g.error("expected case label list");
                         g.advance(":", "expected ':' after case label list");
@@ -135,8 +137,11 @@ namespace pascal_grammar {
                          * 2) case ... of ... : ( ... ; )
                          */
                         next = p.next_token_as_string();
-                        if (next == ")" || next == "end")
+                        if (next == ")" || next == "end") {
+                            variants.reverse();
+                            variant_part = std::make_shared<VariantPartNode>(std::move(variants));
                             break;
+                        }
                     }
                 }
                 return std::make_shared<FieldListNode>(

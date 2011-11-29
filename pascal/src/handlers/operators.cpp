@@ -28,7 +28,11 @@ namespace pascal_grammar {
         }
 
         std::function<PNode(PNode)> createSignNud(char sign) {
-            return [sign](PNode x) -> std::shared_ptr<SignNode> {
+            return [sign](PNode x) -> PNode {
+                if (node_traits::has_type<UIntegerNumberNode>(x))
+                    return std::make_shared<IntegerNumberNode>(x, sign);
+                if (node_traits::has_type<URealNumberNode>(x))
+                    return std::make_shared<RealNumberNode>(x, sign);
                 return std::make_shared<SignNode>(sign, x);
             };
         }

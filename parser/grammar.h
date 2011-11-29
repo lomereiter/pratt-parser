@@ -78,13 +78,13 @@ namespace grammar {
 #define __DEFINE_GRAMMAR_GUARD__(__field_name, __field_type) \
 template <typename T> \
 Grammar<T>::__field_name##_guard::__field_name##_guard(Symbol<T>& s, __field_type f) : \
-            sym(s), old_##__field_name(s.__field_name) { \
-    sym.__field_name = f; \
+            sym(s), old_##__field_name(std::move(s.__field_name)) { \
+    sym.__field_name = std::move(f); \
 } \
 \
 template <typename T> \
 Grammar<T>::__field_name##_guard::~__field_name##_guard() { \
-    sym.__field_name = old_##__field_name; \
+    sym.__field_name = std::move(old_##__field_name); \
 }
 
             __DECLARE_GRAMMAR_GUARD__(lbp, int);

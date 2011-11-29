@@ -19,12 +19,20 @@ SignNode::SignNode(char sign, const PNode& child) :
     child(child), _sign(sign) {}
 char SignNode::sign() { return _sign; }
 
-NumberNode::NumberNode(std::string val) : value(val) {}
+UIntegerNumberNode::UIntegerNumberNode(std::string val) : value(val) {}
+URealNumberNode::URealNumberNode(std::string significand, std::string exponent) :
+    significand(significand), exponent(exponent) {}
+
+IntegerNumberNode::IntegerNumberNode(const PNode& value, char sign) : value(value), sign(sign) {}
+RealNumberNode::RealNumberNode(const PNode& value, char sign) : value(value), sign(sign) {}
 IdentifierNode::IdentifierNode(std::string s) : name(s) {}
 StringNode::StringNode(std::string s) : str(s) {}
 ConstantNode::ConstantNode(const PNode& node) : child(node) {}
 
 SubrangeNode::SubrangeNode(const PNode& lb, const PNode& ub) : 
+        lower_bound(lb), upper_bound(ub) {}
+
+SubrangeTypeNode::SubrangeTypeNode(const PNode& lb, const PNode& ub) : 
         lower_bound(lb), upper_bound(ub) {}
 
 EnumeratedTypeNode::EnumeratedTypeNode(const PNode& id_list) 
@@ -125,6 +133,8 @@ ProcedureHeadingNode::ProcedureHeadingNode(const std::string& name, const PNode&
 FunctionHeadingNode::FunctionHeadingNode(const std::string& name, const PNode& params,
         const PNode& return_type) : name(name), params(params), return_type(return_type) {}
 
+FunctionIdentificationNode::FunctionIdentificationNode(const std::string& name) : name(name) {}
+
 ParameterNode::ParameterNode(const PNode& child) : child(child) {}
 
 ProcedureNode::ProcedureNode(const PNode& heading, const PNode& body) : 
@@ -158,3 +168,9 @@ RecordSectionNode::RecordSectionNode(std::shared_ptr<VariableDeclNode>&& var_dec
 
 FieldListNode::FieldListNode(const PNode& fixed_part, const PNode& variant_part) :
     fixed_part(fixed_part), variant_part(variant_part) {}
+
+LabeledStatementNode::LabeledStatementNode(const PNode& label, const PNode& statement) :
+        label(label), statement(statement) {}
+
+LabelSectionNode::LabelSectionNode(const PNode& list) : list(list) {}
+GotoStatementNode::GotoStatementNode(const PNode& label) : label(label) {}

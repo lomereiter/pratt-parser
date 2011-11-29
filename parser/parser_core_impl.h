@@ -22,21 +22,21 @@ PrattParser<T>::PrattParser(const std::string& str,
    
 template <typename T>
 T PrattParser<T>::parse(int rbp) {
-    std::unique_ptr<Token<T>> t = std::move(token);
+    prev_token = std::move(token);
     token = next();
 #ifdef DEBUG
-    std::cout <<  "Calling nud of " << t -> id();
+    std::cout <<  "Calling nud of " << prev_token -> id();
     std::cout << " (token.lbp = " << token -> lbp() << ", rbp = " << rbp << ")" << std::endl;
 #endif
-    T left = t -> nud(*this); /* value for terminals, result of func. call otherwise */
+    T left = prev_token -> nud(*this); /* value for terminals, result of func. call otherwise */
     while (rbp < token -> lbp()) {
-        t = std::move(token);
+        prev_token = std::move(token);
         token = next();
 #ifdef DEBUG
-        std::cout << "Calling led of " << t -> id();
+        std::cout << "Calling led of " << prev_token -> id();
         std::cout << " (token.lbp = " << token -> lbp() << ", rbp = " << rbp << ")" << std::endl;
 #endif
-        left = t -> led(*this, left);
+        left = prev_token -> led(*this, left);
     }
     return left;
 }
@@ -66,7 +66,8 @@ PrattParser<T>& PrattParser<T>::advance(const std::string& s) {
 template <typename T>
 SourcePosition PrattParser<T>::current_position() const {
     SourcePosition sp;
-    sp.position = token->start_position;
+    const std::unique_ptr<Token<T>>& tok = token ? token : prev_token;
+    sp.position = tok ? tok -> start_position : 0;
     sp.line = token_iter.current_line();
     sp.column = sp.position - token_iter.last_new_line() + 1;
     return sp;

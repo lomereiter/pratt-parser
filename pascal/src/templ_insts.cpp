@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <string>
-
 struct Node;
 
 namespace token {

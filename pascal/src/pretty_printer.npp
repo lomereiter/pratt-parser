@@ -1,6 +1,10 @@
 Node -> println 'IMPLEMENT ME!';
-EmptyNode -> println 'NONE';
-NumberNode -> println <value>;
+EmptyNode -> println 'NOTHING';
+UIntegerNumberNode -> println <value>;
+URealNumberNode -> print <significand>, no_indent print 'E', no_indent println <exponent>;
+IntegerNumberNode -> print <sign>, no_indent visit value;
+IntegerNumberListNode -> visit_children;
+RealNumberNode -> print <sign>, no_indent visit value;
 IdentifierNode -> print 'IDENTIFIER ', no_indent println <name>;
 IdentifierListNode -> println 'IDENTIFIER LIST:', indented visit_children;
 ConstantNode -> println 'CONSTANT', indented visit child;
@@ -25,6 +29,9 @@ SignNode -> println !'(e -> sign() == ''+'' ? "PLUS SIGN" : "MINUS SIGN")',
 SubrangeNode -> println 'SUBRANGE:',
                 indented { println 'LOWER BOUND', indented visit lower_bound,
                            println 'UPPER BOUND', indented visit upper_bound };
+SubrangeTypeNode -> println 'SUBRANGE TYPE:',
+                    indented { println 'LOWER BOUND', indented visit lower_bound,
+                               println 'UPPER BOUND', indented visit upper_bound };
 VariableDeclNode -> println 'VARIABLE DECLARATION: ',
                     indented { visit id_list, println 'OF TYPE', indented visit type };
 VariableDeclListNode -> visit_children;
@@ -140,4 +147,9 @@ RecordSectionNode -> println 'RECORD SECTION:',
                      indented { println 'IDENTIFIER LIST:', indented visit id_list,
                                 println 'OF TYPE:', indented visit type };
 ifdef PASCAL_6000 : ProcedureExternDeclNode -> println 'PROCEDURE EXTERN DECLARATION:', indented visit heading;
-ifdef PASCAL_6000 : FunctionExternDeclNode -> println 'FUNCTION EXTERN DECLARATION:', indented visit heading
+ifdef PASCAL_6000 : FunctionExternDeclNode -> println 'FUNCTION EXTERN DECLARATION:', indented visit heading;
+LabeledStatementNode -> println 'LABELED STATEMENT:', indented {
+                            print 'LABEL: ', no_indent visit label, visit statement };
+LabelSectionNode -> println 'LABEL DECLARATION PART:', indented visit list;
+GotoStatementNode -> print 'GOTO STATEMENT: LABEL ', no_indent visit label;
+FunctionIdentificationNode -> print 'FUNCTION DEFINITION: ', no_indent println <name>

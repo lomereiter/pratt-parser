@@ -10,6 +10,7 @@ namespace pascal_grammar {
         struct ExpressionListParser {
             PNode operator()(PascalGrammar& g) {
                 PrattParser<PNode>& p = *(g.parser);
+                PascalGrammar::lbp_guard comma_lbp_guard(*(g.comma), 1);
                 PascalGrammar::behaviour_guard<PascalGrammar::RightAssociative> 
                 comma_guard(*(g.comma),
                     [&g](PNode x, PNode y) {
@@ -17,10 +18,10 @@ namespace pascal_grammar {
                                .get_expression();
                     });
 
-                PNode elements = p.parse(40); /* must be less than lbp of subexpressions */
+                PNode elements = p.parse(0); /* must be less than lbp of subexpressions */
 
                 if (!node_traits::is_list_of<ExprType>(elements))
-                    g.error("expected list of expressions or subranges after '['");
+                    g.error("expected list of expressions");
 
                 return elements;
             }
@@ -35,6 +36,14 @@ namespace pascal_grammar {
        g.add_symbol_to_dict("]", 0);
        g.add_symbol_to_dict("[", 1000) 
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
+            PascalGrammar::behaviour_guard<PascalGrammar::LeftAssociative> range_guard(*(g.range),
+                [&g](PNode left, PNode right) -> PNode {
+                    if (!node_traits::is_convertible_to<ExpressionNode>(left))
+                        g.error("expected expression as subrange lower bound");
+                    if (!node_traits::is_convertible_to<ExpressionNode>(right))
+                        g.error("expected expression as subrange upper bound");
+                    return std::make_shared<SubrangeNode>(left, right);
+                });
             if (p.next_token_as_string() == "]") {
                 p.advance();
                 return std::make_shared<SetNode>(
@@ -77,14 +86,8 @@ namespace pascal_grammar {
         .led = [&g](PrattParser<PNode>& p, PNode left) -> PNode {
                 if (!node_traits::has_type<IdentifierNode>(left))
                     g.error("expected identifier before '(' token");
-                PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma),
-                    [&g](PNode left, PNode right) {
-                        return ListVisitor<ExpressionNode>(left, right, &g, "expression")
-                               .get_expression();
-                    });
-                PNode params = p.parse(0);
-                if (!node_traits::is_list_of<ExpressionNode>(params))
-                    g.error("expected list of parameters after '(' token");
+                static detail::ExpressionListParser<ExpressionNode> parse_params;
+                PNode params = parse_params(g);
                 g.advance(")", "expected ')' token after the list of parameters");
                 return std::make_shared<FunctionDesignatorNode>(left, params);
             };

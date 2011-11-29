@@ -65,7 +65,6 @@ class Token {
             const Symbol<T>* match; ///< points to Symbol which matches current Token
             size_t last_new_line_;  ///< position in #str of last '\n' character
             size_t current_line_;   ///< one-indexed current line
-
             public:
             /// initializes #str and #symbols
             iterator(const std::string& str,

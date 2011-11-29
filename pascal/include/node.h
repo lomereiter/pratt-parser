@@ -58,9 +58,27 @@ struct SignNode : public VisitableNode<SignNode> {
         char _sign;
 };
 
-struct NumberNode : public VisitableNode<NumberNode> {
+struct UIntegerNumberNode : public VisitableNode<UIntegerNumberNode> {
     std::string value;
-    NumberNode(std::string val);
+    UIntegerNumberNode(std::string value);
+};
+
+struct URealNumberNode : public VisitableNode<URealNumberNode> {
+    std::string significand;
+    std::string exponent;
+    URealNumberNode(std::string significand, std::string exponent="0");
+};
+
+struct IntegerNumberNode : public VisitableNode<IntegerNumberNode> {
+    PNode value;
+    char sign;
+    IntegerNumberNode(const PNode& value, char sign='+');
+};
+
+struct RealNumberNode : public VisitableNode<RealNumberNode> {
+    PNode value;
+    char sign;
+    RealNumberNode(const PNode& value, char sign='+');
 };
 
 struct IdentifierNode : public VisitableNode<IdentifierNode> {
@@ -81,8 +99,13 @@ struct ConstantNode : public VisitableNode<ConstantNode> {
 struct SubrangeNode : public VisitableNode<SubrangeNode> {
     PNode lower_bound;
     PNode upper_bound;
-
     SubrangeNode(const PNode& lb, const PNode& ub);
+};
+
+struct SubrangeTypeNode : public VisitableNode<SubrangeTypeNode> {
+    PNode lower_bound;
+    PNode upper_bound;
+    SubrangeTypeNode(const PNode& lb, const PNode& ub);
 };
 
 struct EnumeratedTypeNode : public VisitableNode<EnumeratedTypeNode> {
@@ -316,6 +339,11 @@ struct FunctionHeadingNode : public VisitableNode<FunctionHeadingNode> {
     FunctionHeadingNode(const std::string& n, const PNode& p, const PNode& r);
 };
 
+struct FunctionIdentificationNode : public VisitableNode<FunctionIdentificationNode> {
+    std::string name;
+    FunctionIdentificationNode(const std::string& name);
+};
+
 struct ProcedureNode : public VisitableNode<ProcedureNode> {
     PNode heading;
     PNode body;
@@ -389,5 +417,21 @@ struct FieldListNode : public VisitableNode<FieldListNode> {
     PNode fixed_part;
     PNode variant_part;
     FieldListNode(const PNode& f, const PNode& v);
+};
+
+struct LabeledStatementNode : public VisitableNode<LabeledStatementNode> {
+    PNode label;
+    PNode statement;
+    LabeledStatementNode(const PNode& label, const PNode& statement);
+};
+
+struct LabelSectionNode : public VisitableNode<LabelSectionNode> {
+    PNode list;
+    LabelSectionNode(const PNode& list);
+};
+
+struct GotoStatementNode : public VisitableNode<GotoStatementNode> {
+    PNode label;
+    GotoStatementNode(const PNode& label);
 };
 #endif

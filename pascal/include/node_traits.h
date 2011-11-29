@@ -99,7 +99,7 @@ namespace node_traits {
             RecordTypeNode, SetTypeNode, FileTypeNode, ArrayTypeNode> IsUST;
 
         typedef AreConvertibleTo< IndexTypeNode,
-            SubrangeNode, EnumeratedTypeNode, IdentifierNode> IsIndexType;
+            SubrangeTypeNode, EnumeratedTypeNode, IdentifierNode> IsIndexType;
 
         typedef AreConvertibleTo< dummy_type,
             utils::append<  IsUST::list,
@@ -116,13 +116,27 @@ namespace node_traits {
             IdentifierNode, IndexedVariableNode, ReferencedVariableNode,
             FieldDesignatorNode> IsVar;
 
+        typedef AreConvertibleTo< dummy_type,
+            UIntegerNumberNode, URealNumberNode> IsUnsignedNumber;
+
+        typedef AreConvertibleTo< dummy_type,
+            UIntegerNumberNode, URealNumberNode, 
+            IntegerNumberNode,  RealNumberNode> IsNumber;
+
         typedef AreConvertibleTo< ExpressionNode,
-            utils::append<  IsVar::list,
-                OperationNode, StringNode, NumberNode, SetNode, 
-                SignNode, FunctionDesignatorNode>::list> IsExpr;
+            utils::append< IsNumber::list,
+                utils::append<  IsVar::list,
+                    OperationNode, StringNode, SetNode, SignNode, 
+                    FunctionDesignatorNode>::list>::list> IsExpr;
 
         typedef ConversionTable<
             IsIndexType, IsVar, IsExpr,
+            
+            AreConvertibleTo< IntegerNumberNode, 
+                UIntegerNumberNode>,
+
+            AreConvertibleTo< RealNumberNode,
+                URealNumberNode>,
 
             AreConvertibleTo< SetExpressionNode,
                 utils::append<  IsExpr::list, SubrangeNode>::list>,
@@ -130,9 +144,9 @@ namespace node_traits {
             AreConvertibleTo< StatementNode,
                 AssignmentStatementNode, CompoundStatementNode, EmptyNode,
                 WhileStatementNode, RepeatStatementNode, ForStatementNode,
-                IdentifierNode, FunctionDesignatorNode, // <- indistinguishable during parsing
-                IfThenNode, IfThenElseNode, WithStatementNode, CaseStatementNode,
-                WriteNode, WriteLineNode>,
+                FunctionDesignatorNode, IfThenNode, IfThenElseNode, 
+                WithStatementNode, CaseStatementNode, WriteNode, 
+                WriteLineNode, GotoStatementNode, LabeledStatementNode>,
 
             AreConvertibleTo< ParameterNode,
                 VariableParameterNode, ValueParameterNode, 
@@ -140,8 +154,8 @@ namespace node_traits {
 
             AreConvertibleTo< DeclarationNode,
                 VariableSectionNode, TypeSectionNode, ConstSectionNode,
-                FunctionNode, FunctionForwardDeclNode,
-                ProcedureNode, ProcedureForwardDeclNode>
+                FunctionNode, FunctionForwardDeclNode, FunctionIdentificationNode,
+                ProcedureNode, ProcedureForwardDeclNode, LabelSectionNode>
                                > conversions;
 
         template <typename NodeType, bool has_conversions> struct is_convertible_helper;
@@ -164,18 +178,22 @@ namespace node_traits {
         struct is_convertible_helper<ConstantNode, true> {
             typedef struct {
                 bool operator()(const PNode& node) {
+                    typedef AreConvertibleTo<ConstantNode,
+                        utils::append< IsNumber::list, IdentifierNode>::list> IsNumConst;
+                    static IsNumConst is_num_const;
                     static AreConvertibleTo<ConstantNode,
-                        StringNode, NumberNode, IdentifierNode> is_surely_constant;
+                        utils::append< IsNumConst::list, StringNode>::list> is_surely_constant;
                     return is_surely_constant(node) ||
                            ( has_type<SignNode>(node) &&
-                             is_surely_constant(
-                                 std::static_pointer_cast<SignNode>(node) -> child) );
+                             is_num_const(std::static_pointer_cast<SignNode>(node) -> child) );
                 }
             } type;
         };
 
     } // namespace detail
 
+    static detail::IsUnsignedNumber is_unsigned_number;
+    static detail::IsNumber is_number;
     static detail::IsUST is_unpacked_structured_type;
     static detail::IsType is_type;
     static detail::IsConformantArraySchema is_conformant_array_schema;

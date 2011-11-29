@@ -4,6 +4,8 @@
 #include "token.h"
 
 #include <locale>
+#include <stdexcept>
+#include <sstream>
 
 template <typename T>
 Token<T>::Token(const Symbol<T>& sym, size_t start, size_t end) :
@@ -23,8 +25,10 @@ int Token<T>::lbp() const { return sym_ptr -> lbp; }
 template <typename T>
 T Token<T>::nud(PrattParser<T>& parser) const {
     if (!sym_ptr -> nud) {
-        /* TODO: throw meaningful exception */
-        throw "no nud!";
+        std::stringstream ss;
+        ss << "parsing error near line " << parser.current_position().line 
+           << ": expected prefix operator";
+        throw std::runtime_error(ss.str());
     }
     return sym_ptr -> nud(parser);
 }
@@ -32,8 +36,10 @@ T Token<T>::nud(PrattParser<T>& parser) const {
 template <typename T>
 T Token<T>::led(PrattParser<T>& parser, T left) const {
     if (!sym_ptr -> led) {
-        /* TODO: throw meaningful exception */
-        throw "no led!";
+        std::stringstream ss;
+        ss << "parsing error near line " << parser.current_position().line 
+           << ": unexpected infix/postfix operator";
+        throw std::runtime_error(ss.str());
     }
     return sym_ptr -> led(parser, left);
 }
@@ -70,7 +76,7 @@ typename Token<T>::iterator& Token<T>::iterator::operator++() {
             } 
         }
         if (end == start) {
-            throw "Invalid symbol"; /* FIXME */
+            throw std::runtime_error("invalid symbol");
         }
     }
     return *this;

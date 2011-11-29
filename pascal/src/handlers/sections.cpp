@@ -6,10 +6,19 @@
 #include "ast_visitors.h"
 //#include "node_traits.h"
 
+#include <set>
+
 namespace pascal_grammar {
     void add_sections(PascalGrammar& g) {
 
         typedef PascalGrammar::RightAssociative RightAssociative;
+
+        static auto begins_new_section = [](const std::string& symbol) -> bool {
+            static const std::set<std::string> table = 
+                { "begin", "function", "procedure", 
+                  "type", "label", "var", "const", "" };
+            return table.find(symbol) != table.end();
+        };
 
         static auto opening_bracket_scan_enum = 
         [&g](PrattParser<PNode>& p) -> PNode {
@@ -61,9 +70,7 @@ namespace pascal_grammar {
 
                 g.advance(";", "expected ';' after variable declaration");
 
-                std::string next = p.next_token_as_string();
-                if (next == "begin" || next == "procedure" || next == "function" ||
-                    next == "const" || next == "type" || next == "var" || next == "") 
+                if (begins_new_section(p.next_token_as_string()))
                     break;
             } while (true);
 
@@ -99,10 +106,8 @@ namespace pascal_grammar {
                 g.advance(";", "expected ';' after type definition");
 
                 type_definitions.push_front(std::make_shared<TypeDefinitionNode>(id, type));
-                std::string next = p.next_token_as_string();
 
-                if (next == "begin" || next == "procedure" || next == "function" ||
-                    next == "const" || next == "type" || next == "var" || next == "") 
+                if (begins_new_section(p.next_token_as_string()))
                     break;
             } while (true);
 
@@ -137,13 +142,27 @@ namespace pascal_grammar {
 
                 g.advance(";", "expected ';' after constant definition");
 
-                std::string next = p.next_token_as_string();
-                if (next == "begin" || next == "procedure" || next == "function" ||
-                    next == "const" || next == "type" || next == "var" || next == "") 
+                if (begins_new_section(p.next_token_as_string()))
                     break;
             } while (true);
             const_defs.reverse();
             return std::make_shared<ConstSectionNode>(std::move(const_defs));
+        };
+
+       g.add_symbol_to_dict("label", 1)
+        .nud = [&g](PrattParser<PNode>& p) -> PNode {
+            PascalGrammar::lbp_guard comma_lbp_guard(*(g.comma), 1);
+            PascalGrammar::lbp_guard semicolon_guard(*(g.semicolon), 0);
+            PascalGrammar::behaviour_guard<PascalGrammar::RightAssociative> 
+            comma_guard(*(g.comma),
+               [&g](PNode left, PNode right) {
+               return ListVisitor<IntegerNumberNode>(left, right, &g, "integer number")
+                       .get_expression();
+               });
+
+            PNode labels = p.parse(0);
+            g.advance(";", "expected ';' after label section");
+            return std::make_shared<LabelSectionNode>(labels);
         };
     }
 } // namespace pascal_grammar

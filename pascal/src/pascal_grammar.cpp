@@ -4,7 +4,7 @@
 
 //#include <sstream>
 //#include <forward_list>
-
+#include <stdexcept>
 //#include "node.h"
 #include "ast_visitors.h"
 //#include "syntax_error.h"
@@ -28,8 +28,30 @@ PascalGrammar::PascalGrammar() : Grammar<PNode>("(end)") {
 PNode PascalGrammar::parse(const std::string& program) {
     static PascalGrammar pg;
     std::string str = program;
-    for (auto& c : str) {
-        c = tolower(c);
+    {
+        bool lower = true;
+        enum { BRACE_COMMENT, BRACKET_COMMENT, STRING, DEFAULT } state = DEFAULT;
+        for (size_t i = 0; i != str.length(); ++i) {
+            switch (state) {
+                case DEFAULT:
+                    if (str[i] == '\'') lower = false, state = STRING;
+                    if (str[i] == '{') lower = false, state = BRACE_COMMENT;
+                    if (str[i] == '(' && (i + 1) < str.length() && str[i + 1] == '*')
+                        lower = false, state = BRACKET_COMMENT;
+                    break;
+                case STRING:
+                    if (str[i] == '\'') lower = true, state = DEFAULT;
+                    break;
+                case BRACE_COMMENT:
+                    if (str[i] == '}') lower = true, state = DEFAULT;
+                    break;
+                case BRACKET_COMMENT:
+                    if (str[i] == '*' && (i + 1) < str.length() && str[i + 1] == ')')
+                        lower = true, state = DEFAULT;
+                    break;
+            }
+            if (lower) str[i] = tolower(str[i]);
+        }
     }
     pg.parser = std::unique_ptr<PrattParser<PNode>>(
                     new PrattParser<PNode>( str, pg.get_symbols() )
@@ -57,7 +79,8 @@ PNode PascalGrammar::parse(const std::string& program) {
                 node = next_symbol();
                 if (node_traits::has_type<ConstSectionNode>(node)    ||
                     node_traits::has_type<VariableSectionNode>(node) ||
-                    node_traits::has_type<TypeSectionNode>(node))
+                    node_traits::has_type<TypeSectionNode>(node)     ||
+                    node_traits::has_type<LabelSectionNode>(node))
                 {
                     declarations.push_front(node);
                 } 
@@ -99,14 +122,25 @@ PNode PascalGrammar::parse(const std::string& program) {
                     }
                     pg.advance(";", "expected ';' after function declaration");
                 } 
+                else if (node_traits::has_type<FunctionIdentificationNode>(node))
+                {
+                    pg.advance(";", "expected ';' after function identifier");
+                    declarations.push_front(std::make_shared<FunctionNode>(node, operator()()));
+                    pg.advance(";", "expected ';' after function declaration");
+                } 
                 else if (node_traits::has_type<CompoundStatementNode>(node)) {
                     declarations.push_front(
                             std::static_pointer_cast<CompoundStatementNode>(node) -> child);
                     break;
-                } else {
+                } 
+                else {
                     break;
                 }
             } // while
+
+            if (declarations.empty())
+                pg.error("expected statement part");
+
             auto statements = declarations.front();
             declarations.pop_front();
             if (!node_traits::is_list_of<StatementNode>(statements))
@@ -119,15 +153,20 @@ PNode PascalGrammar::parse(const std::string& program) {
         }
     } parse_block;
 
-    if (pg.parser -> next_token_as_string() == "program") { // FIXME: just skip without any checks
-        while (pg.parser -> next_token_as_string() != ";")
+    PNode block;
+    try {
+        if (pg.parser -> next_token_as_string() == "program") { // FIXME: just skip without any checks
+            while (pg.parser -> next_token_as_string() != ";")
+                pg.parser -> advance();
             pg.parser -> advance();
-        pg.parser -> advance();
-    }
+        }
 
-    PNode block = parse_block();
-    pg.advance(".", "expected '.' after 'end'");
-    pg.advance("", "unexpected symbol after 'end.'");
+        block = parse_block();
+        pg.advance(".", "expected '.' after 'end'");
+        pg.advance("", "unexpected symbol after 'end.'");
+    } catch (std::runtime_error& e) {
+        pg.error(e.what());
+    }
     return block;
 }
 

@@ -21,7 +21,7 @@ namespace pascal {
             while (i < str.length() && isdigit(str[i]))
                 ++i; // read digits after dot
         }
-        if (i < str.length() && (str[i] == 'E' || str[i] == 'e')) {
+        if (i < str.length() && str[i] == 'e') {
             ++i; // read optional exponent
             if (i >= str.length()) return pos;
             if (str[i] == '+' || str[i] == '-')
