@@ -24,6 +24,7 @@ struct ConstantNode;
 typedef ListOf<ConstantNode> ConstantListNode;
 
 struct SubrangeNode;
+struct SubrangeTypeNode;
 struct EnumeratedTypeNode;
 struct PointerTypeNode;
 

@@ -15,9 +15,9 @@
 #endif
 
 namespace node_traits {
-    using utils::type;
 
     namespace visitors {
+        using utils::type;
 
         struct TraitsVisitor : public AstIgnoreVisitor {
             using AstIgnoreVisitor::visit;
@@ -67,14 +67,15 @@ namespace node_traits {
     template <typename T>
     bool has_type(const PNode& node) {
 #ifdef DEBUG
-        std::cout << "Node tag: " << node -> tag() << "; type tag: " << node_traits::get_tag_value<T>() << '\n';
+        std::cout << "Node tag: " << node -> tag() << "; type tag: " 
+                  << node_traits::get_tag_value<T>() << '\n';
 #endif
         return node -> tag() == node_traits::get_tag_value<T>();
     }
 
     namespace detail {
-        
-        using utils::type;
+       
+        using namespace utils;
         using namespace visitors;
 
         template <typename... ConversionLists>
@@ -102,15 +103,14 @@ namespace node_traits {
             SubrangeTypeNode, EnumeratedTypeNode, IdentifierNode> IsIndexType;
 
         typedef AreConvertibleTo< dummy_type,
-            utils::append<  IsUST::list,
-            utils::append<  IsIndexType::list, PointerTypeNode, PackedTypeNode
-                         >::list>::list> IsType;
+            flatten< IsUST::list, IsIndexType::list, 
+                PointerTypeNode, PackedTypeNode>::list > IsType;
 
         typedef AreConvertibleTo< dummy_type,
                 UCArraySchemaNode, PCArraySchemaNode> IsConformantArraySchema;
 
         typedef AreConvertibleTo< dummy_type,
-                utils::append< IsConformantArraySchema::list, IdentifierNode>::list> IsParamType;
+            flatten< IsConformantArraySchema::list, IdentifierNode>::list> IsParamType;
 
         typedef AreConvertibleTo< VariableNode,
             IdentifierNode, IndexedVariableNode, ReferencedVariableNode,
@@ -124,29 +124,24 @@ namespace node_traits {
             IntegerNumberNode,  RealNumberNode> IsNumber;
 
         typedef AreConvertibleTo< ExpressionNode,
-            utils::append< IsNumber::list,
-                utils::append<  IsVar::list,
-                    OperationNode, StringNode, SetNode, SignNode, 
-                    FunctionDesignatorNode>::list>::list> IsExpr;
+            flatten< IsNumber::list, IsVar::list,
+                OperationNode, StringNode, SetNode, SignNode, 
+                FunctionDesignatorNode>::list> IsExpr;
 
         typedef ConversionTable<
             IsIndexType, IsVar, IsExpr,
             
-            AreConvertibleTo< IntegerNumberNode, 
-                UIntegerNumberNode>,
-
-            AreConvertibleTo< RealNumberNode,
-                URealNumberNode>,
+            AreConvertibleTo< IntegerNumberNode, UIntegerNumberNode>,
+            AreConvertibleTo< RealNumberNode, URealNumberNode>,
 
             AreConvertibleTo< SetExpressionNode,
-                utils::append<  IsExpr::list, SubrangeNode>::list>,
+                flatten<  IsExpr::list, SubrangeNode>::list>,
 
             AreConvertibleTo< StatementNode,
-                AssignmentStatementNode, CompoundStatementNode, EmptyNode,
-                WhileStatementNode, RepeatStatementNode, ForStatementNode,
-                FunctionDesignatorNode, IfThenNode, IfThenElseNode, 
-                WithStatementNode, CaseStatementNode, WriteNode, 
-                WriteLineNode, GotoStatementNode, LabeledStatementNode>,
+                IfThenNode, IfThenElseNode, CompoundStatementNode, ForStatementNode,
+                WhileStatementNode, RepeatStatementNode, WriteNode, WriteLineNode,
+                FunctionDesignatorNode, LabeledStatementNode, AssignmentStatementNode,
+                WithStatementNode, CaseStatementNode, GotoStatementNode, EmptyNode>,
 
             AreConvertibleTo< ParameterNode,
                 VariableParameterNode, ValueParameterNode, 
@@ -179,10 +174,10 @@ namespace node_traits {
             typedef struct {
                 bool operator()(const PNode& node) {
                     typedef AreConvertibleTo<ConstantNode,
-                        utils::append< IsNumber::list, IdentifierNode>::list> IsNumConst;
+                        flatten< IsNumber::list, IdentifierNode>::list> IsNumConst;
                     static IsNumConst is_num_const;
                     static AreConvertibleTo<ConstantNode,
-                        utils::append< IsNumConst::list, StringNode>::list> is_surely_constant;
+                        flatten< IsNumConst::list, StringNode>::list> is_surely_constant;
                     return is_surely_constant(node) ||
                            ( has_type<SignNode>(node) &&
                              is_num_const(std::static_pointer_cast<SignNode>(node) -> child) );

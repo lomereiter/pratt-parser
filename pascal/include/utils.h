@@ -18,54 +18,31 @@ namespace utils {
         enum { value = belongs_to<T, Tail...>::value };
     };
 
-    template <typename T, typename... Types>
-    struct belongs_to<T, type<Types...>> {
-        enum { value = belongs_to<T, Types...>::value };
-    };
-
-    namespace detail {
-        template <typename T, typename List> struct append_one;
-        template <typename T, typename... Tail>
-        struct append_one <T, type<Tail...>>  {
-            typedef type<T, Tail...> list;
-        };
-    }
-
-    template <typename T> struct head;
     template <typename T, typename... Tail>
-    struct head<type<T, Tail...>> {
-        typedef T type;
-    };
-    
-    template <typename T> struct tail;
-    template <typename T, typename... Tail>
-    struct tail<type<T, Tail...>> {
-        typedef type<Tail...> list;
+    struct belongs_to<T, type<Tail...>> {
+        enum { value = belongs_to<T, Tail...>::value };
     };
 
-    template <typename T, typename... Tail>
-    struct append {
-        typedef typename detail::append_one< 
-                             typename head<T>::type,
-                             typename append< typename tail<T>::list,
-                                                       Tail...
-                                            >::list
-                                           >::list list;
+    template <typename... T> struct cons;
+    template <typename H, typename... T> 
+    struct cons<H, type<T...>> {
+        typedef type<H, T...> list;
     };
 
-    template <typename... Tail>
-    struct append <type<>, Tail...> {
-        typedef type<Tail...> list;
-    };
-   
-    template <typename T, typename... Tail> 
-    struct append <T, type<Tail...>> {
-        typedef typename append <T, Tail...>::list list;
+    template <typename... T> struct flatten {
+        typedef typename flatten<type<T...>>::list list;
     };
 
-    template <typename... Tail>
-    struct append <type<>, type<Tail...>> {
-        typedef type<Tail...> list;
+    template <> struct flatten<type<>> { typedef type<> list; };
+
+    template <typename... T, typename... U>
+    struct flatten<type<type<T...>, U...>> { 
+        typedef typename flatten<type<T..., U...>>::list list; 
+    };
+
+    template <typename H, typename... T>
+    struct flatten<type<H, T...>> {
+        typedef typename cons<H, typename flatten<type<T...>>::list>::list list;
     };
 
     namespace typemap {

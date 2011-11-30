@@ -57,10 +57,6 @@ namespace pascal_grammar {
                return std::make_shared<EmptyNode>();
            PNode node = p.parse(0);
            process_if_identifier(node);
-           if (node_traits::has_type<IdentifierNode>(node)) {
-               node = std::make_shared<FunctionDesignatorNode>(node,
-                          std::make_shared<ExpressionListNode>());
-           }
            if (!node_traits::is_convertible_to<StatementNode>(node))
                g.error("expected statement");
            return node;
