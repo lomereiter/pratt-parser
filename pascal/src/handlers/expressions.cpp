@@ -2,7 +2,7 @@
 
 //#include "pascal_grammar.h"
 //#include "node_traits.h"
-#include "ast_visitors.h"
+#include "list_guard.h"
 
 namespace pascal_grammar {
     namespace detail {
@@ -11,12 +11,7 @@ namespace pascal_grammar {
             PNode operator()(PascalGrammar& g) {
                 PrattParser<PNode>& p = *(g.parser);
                 PascalGrammar::lbp_guard comma_lbp_guard(*(g.comma), 1);
-                PascalGrammar::behaviour_guard<PascalGrammar::RightAssociative> 
-                comma_guard(*(g.comma),
-                    [&g](PNode x, PNode y) {
-                        return ListVisitor<ExprType>(x, y, &g, "expression")
-                               .get_expression();
-                    });
+                PascalGrammar::list_guard<ExprType> comma_guard(g, g.comma, "expression");
 
                 PNode elements = p.parse(0); /* must be less than lbp of subexpressions */
 

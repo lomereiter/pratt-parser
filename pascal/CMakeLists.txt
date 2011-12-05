@@ -20,6 +20,7 @@ set (HEADERS
         include/operator.h
         include/syntax_error.h
         include/ast_visitors.h
+        include/list_guard.h
         include/node.h
         include/node_fwd.h
         include/visitor.h

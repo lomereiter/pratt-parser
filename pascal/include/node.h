@@ -6,6 +6,7 @@
 #include <string>
 
 #include "node_tags.h"
+#include "node_fwd.h"
 #include "operator.h"
 
 struct Node {
@@ -433,5 +434,18 @@ struct LabelSectionNode : public VisitableNode<LabelSectionNode> {
 struct GotoStatementNode : public VisitableNode<GotoStatementNode> {
     PNode label;
     GotoStatementNode(const PNode& label);
+};
+
+struct ProgramHeadingNode : public VisitableNode<ProgramHeadingNode> {
+    std::string name;
+    PNode files;
+    ProgramHeadingNode(const std::string& name, const PNode& files);
+    ProgramHeadingNode(const std::string& name);
+};
+
+struct ProgramNode : public VisitableNode<ProgramNode> {
+    PNode heading;
+    PNode block;
+    ProgramNode(const PNode& heading, const PNode& block);
 };
 #endif

@@ -150,7 +150,9 @@ namespace node_traits {
             AreConvertibleTo< DeclarationNode,
                 VariableSectionNode, TypeSectionNode, ConstSectionNode,
                 FunctionNode, FunctionForwardDeclNode, FunctionIdentificationNode,
-                ProcedureNode, ProcedureForwardDeclNode, LabelSectionNode>
+                ProcedureNode, ProcedureForwardDeclNode, LabelSectionNode>,
+
+            AreConvertibleTo< ProgramHeadingNode, IdentifierNode>
                                > conversions;
 
         template <typename NodeType, bool has_conversions> struct is_convertible_helper;

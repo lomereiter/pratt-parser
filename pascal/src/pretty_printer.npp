@@ -152,4 +152,7 @@ LabeledStatementNode -> println 'LABELED STATEMENT:', indented {
                             print 'LABEL: ', no_indent visit label, visit statement };
 LabelSectionNode -> println 'LABEL DECLARATION PART:', indented visit list;
 GotoStatementNode -> print 'GOTO STATEMENT: LABEL ', no_indent visit label;
-FunctionIdentificationNode -> print 'FUNCTION DEFINITION: ', no_indent println <name>
+FunctionIdentificationNode -> print 'FUNCTION DEFINITION: ', no_indent println <name>;
+ProgramHeadingNode -> println <name>, 
+                      indented { println 'PROGRAM PARAMETERS:', indented visit files };
+ProgramNode -> print 'PROGRAM HEADING: ', no_indent visit heading, visit block

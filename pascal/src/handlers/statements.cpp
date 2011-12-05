@@ -1,5 +1,5 @@
 //#include "pascal_grammar.h"
-#include "ast_visitors.h"
+#include "list_guard.h"
 
 #ifdef PRINT_DEBUG
 #include <iostream>
@@ -187,11 +187,7 @@ namespace pascal_grammar {
 #ifdef PRINT_DEBUG
             cout << "ENTERING WITH STATEMENT" << endl;
 #endif
-            PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma),
-                [&g](PNode left, PNode right) {
-                    return ListVisitor<VariableNode>(left, right, &g, "record variable")
-                           .get_expression();
-                });
+            PascalGrammar::list_guard<VariableNode> comma_guard(g, g.comma, "record variable");
             PNode list = p.parse(0);
             if (!node_traits::is_list_of<VariableNode>(list))
                 g.error("expected list of record variables after 'with'");
@@ -210,12 +206,7 @@ namespace pascal_grammar {
                 g.error("expected expression after 'case'");
             g.advance("of", "expected 'of' after expression");
 
-            PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma),
-                [&g](PNode left, PNode right) {
-                    return ListVisitor<ConstantNode>(left, right, &g, "constant")
-                           .get_expression();
-                });
-
+            PascalGrammar::list_guard<ConstantNode> comma_guard(g, g.comma, "constant");
             PascalGrammar::lbp_guard colon_lbp_guard(*(g.colon), 1);
             PascalGrammar::led_guard colon_guard(*(g.colon),
                 [&g](PrattParser<PNode>& p, PNode left) -> PNode {

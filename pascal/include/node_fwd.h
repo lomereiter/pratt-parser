@@ -126,4 +126,7 @@ struct LabeledStatementNode;
 struct LabelSectionNode;
 struct GotoStatementNode;
 struct FunctionIdentificationNode;
+
+struct ProgramHeadingNode;
+struct ProgramNode;
 #endif

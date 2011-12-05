@@ -6,7 +6,7 @@
 //#include <forward_list>
 #include <stdexcept>
 //#include "node.h"
-#include "ast_visitors.h"
+#include "list_guard.h"
 //#include "syntax_error.h"
 //#include "node_traits.h"
 using namespace grammar;
@@ -154,11 +154,33 @@ PNode PascalGrammar::parse(const std::string& program) {
     } parse_block;
 
     PNode block;
+    PNode program_heading = std::make_shared<EmptyNode>();
+
     try {
-        if (pg.parser -> next_token_as_string() == "program") { // FIXME: just skip without any checks
-            while (pg.parser -> next_token_as_string() != ";")
-                pg.parser -> advance();
+        if (pg.parser -> next_token_as_string() == "program") {
             pg.parser -> advance();
+
+            PascalGrammar::lbp_guard semi_guard(*(pg.semicolon), 0);
+            PascalGrammar::list_guard<IdentifierNode> comma_guard(pg, pg.comma, "identifier");
+            PascalGrammar::led_guard open_bracket_guard(*(pg.opening_bracket),
+                [&pg](PrattParser<PNode>& p, PNode name) -> PNode {
+                    if (!node_traits::has_type<IdentifierNode>(name))
+                        pg.error("expected identifier as program name");
+                    PNode list = p.parse(0);
+                    if (!node_traits::is_list_of<IdentifierNode>(list))
+                        pg.error("expected list of identifiers after '('");
+                    pg.advance(")", "expected ')' after list of identifiers");
+                    return std::make_shared<ProgramHeadingNode>(
+                        std::static_pointer_cast<IdentifierNode>(name) -> name, 
+                        list);
+                });
+            program_heading = pg.parser -> parse(0);
+            if (!node_traits::is_convertible_to<ProgramHeadingNode>(program_heading))
+                pg.error("expected program heading");
+            if (node_traits::has_type<IdentifierNode>(program_heading))
+                program_heading = std::make_shared<ProgramHeadingNode>(
+                    std::static_pointer_cast<IdentifierNode>(program_heading) -> name);
+            pg.advance(";", "expected ';' after program heading");
         }
 
         block = parse_block();
@@ -167,7 +189,7 @@ PNode PascalGrammar::parse(const std::string& program) {
     } catch (std::runtime_error& e) {
         pg.error(e.what());
     }
-    return block;
+    return std::make_shared<ProgramNode>(program_heading, block);
 }
 
 void PascalGrammar::error(const std::string& description) const {

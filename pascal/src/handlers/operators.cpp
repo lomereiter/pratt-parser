@@ -9,37 +9,42 @@
 
 namespace pascal_grammar {
 
-    namespace {
-        std::function<PNode(PNode, PNode)> createLed(Operator op) {
-            return [op](PNode x, PNode y) -> std::shared_ptr<OperationNode> {
+    void add_operators(PascalGrammar& g) {
+
+        auto createLed = [&g](Operator op) -> std::function<PNode(PNode, PNode)> {
+            return [&g, op](PNode x, PNode y) -> std::shared_ptr<OperationNode> {
+                if (!node_traits::is_convertible_to<ExpressionNode>(x) ||
+                    !node_traits::is_convertible_to<ExpressionNode>(y))
+                    g.error("expected expression");
                 std::shared_ptr<OperationNode> expr = std::make_shared<OperationNode>(2, op);
                 expr -> args.push_front(y);
                 expr -> args.push_front(x);
                 return expr;
             };
-        }
+        };
 
-        std::function<PNode(PNode)> createNud(Operator op) {
-            return [op](PNode x) -> std::shared_ptr<OperationNode> {
+        auto createNud = [&g](Operator op) -> std::function<PNode(PNode)> {
+            return [&g, op](PNode x) -> std::shared_ptr<OperationNode> {
+                if (!node_traits::is_convertible_to<ExpressionNode>(x))
+                    g.error("expected expression");
                 std::shared_ptr<OperationNode> expr = std::make_shared<OperationNode>(1, op);
                 expr -> args.push_front(x);
                 return expr;
             };
-        }
+        };
 
-        std::function<PNode(PNode)> createSignNud(char sign) {
-            return [sign](PNode x) -> PNode {
+        auto createSignNud = [&g](char sign) -> std::function<PNode(PNode)> {
+            return [&g, sign](PNode x) -> PNode {
                 if (node_traits::has_type<UIntegerNumberNode>(x))
                     return std::make_shared<IntegerNumberNode>(x, sign);
                 if (node_traits::has_type<URealNumberNode>(x))
                     return std::make_shared<RealNumberNode>(x, sign);
+                if (!node_traits::is_convertible_to<ExpressionNode>(x))
+                    g.error(std::string("expected expression after ") + sign);
                 return std::make_shared<SignNode>(sign, x);
             };
-        }
-    } // anonymous namespace
-
-    void add_operators(PascalGrammar& g) {
-                            /* negating operator */
+        };
+                 /* negating operator */
         g.prefix("not", 200, createNud(opNot));
 
                             /* multiplicative operators */

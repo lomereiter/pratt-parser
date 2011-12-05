@@ -4,7 +4,7 @@
 //#include "pascal_grammar.h"
 //#include "node_traits.h"
 //#include "node_fwd.h"
-#include "ast_visitors.h"
+#include "list_guard.h"
 
 namespace pascal_grammar {
 
@@ -40,11 +40,7 @@ namespace pascal_grammar {
                 PrattParser<PNode>& p = *(g.parser);
 
                 PascalGrammar::lbp_guard semicolon_guard(*(g.semicolon), 0);
-                PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma), 
-                        [&g](PNode x, PNode y) {
-                            return ListVisitor<IdentifierNode>(x, y, &g, "identifier")
-                                   .get_expression();
-                        });
+                PascalGrammar::list_guard<IdentifierNode> comma_guard(g, g.comma, "identifier");
                 
                 auto next = p.next_token_as_string();
                 if (next == ";") {
@@ -103,12 +99,10 @@ namespace pascal_grammar {
                             g.error("expected type identifier");
                     }
                     g.advance("of", "expected 'of' in variant part");
+
                     PascalGrammar::lbp_guard comma_lbp_guard(*(g.comma), std::numeric_limits<int>::max());
-                    PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma),
-                        [&g](PNode left, PNode right) -> PNode {
-                        return ListVisitor<ConstantNode>(left, right, &g, "constant")
-                                                        .get_expression();
-                        });
+                    PascalGrammar::list_guard<ConstantNode> comma_guard(g, g.comma, "constant");
+
                     std::forward_list<PNode> variants;
                     while (true) {
                         PNode case_label_list = p.parse(std::numeric_limits<int>::max() - 1);
@@ -174,14 +168,9 @@ namespace pascal_grammar {
        g.array -> nud = [&g](PrattParser<PNode>& p) -> PNode {
             PNode bounds;
             {
-                PascalGrammar::behaviour_guard<RightAssociative> guard(*(g.comma), 
-                    [&g](PNode x, PNode y) {
-                        return ListVisitor<IndexTypeNode>(x, y, &g, "index type")
-                               .get_expression();
-                    });
-
                 g.advance("[", "expected '[' after 'array'");
 
+                PascalGrammar::list_guard<IndexTypeNode> guard(g, g.comma, "index type");
                 bounds = p.parse(10);
                 if (node_traits::is_convertible_to<IndexTypeNode>(bounds))
                     bounds = node::make_list(node::convert_to<IndexTypeNode>(bounds));

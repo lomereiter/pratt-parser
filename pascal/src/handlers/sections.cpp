@@ -3,7 +3,7 @@
 //#include <string>
 
 //#include "pascal_grammar.h"
-#include "ast_visitors.h"
+#include "list_guard.h"
 //#include "node_traits.h"
 
 #include <set>
@@ -22,12 +22,7 @@ namespace pascal_grammar {
 
         static auto opening_bracket_scan_enum = 
         [&g](PrattParser<PNode>& p) -> PNode {
-            PascalGrammar::behaviour_guard<RightAssociative> guard(*(g.comma), 
-                [&g](PNode x, PNode y) {
-                    return ListVisitor<IdentifierNode>(x, y, &g, "identifier")
-                           .get_expression();
-                });
-           
+            PascalGrammar::list_guard<IdentifierNode> guard(g, g.comma, "identifier");
             PNode x = p.parse(0);
             g.advance(")", "expected closing ')'");
 
@@ -54,11 +49,7 @@ namespace pascal_grammar {
             PascalGrammar::nud_guard open_bracket_guard(*(g.opening_bracket),
                     opening_bracket_scan_enum);
 
-            PascalGrammar::behaviour_guard<RightAssociative> comma_guard(*(g.comma), 
-                [&g](PNode x, PNode y) {
-                    return ListVisitor<IdentifierNode>(x, y, &g, "identifier")
-                           .get_expression();
-                });
+            PascalGrammar::list_guard<IdentifierNode> comma_guard(g, g.comma, "identifier");
             
             std::forward_list<PNode> variable_declarations;
 
@@ -151,15 +142,10 @@ namespace pascal_grammar {
 
        g.add_symbol_to_dict("label", 1)
         .nud = [&g](PrattParser<PNode>& p) -> PNode {
-            PascalGrammar::lbp_guard comma_lbp_guard(*(g.comma), 1);
             PascalGrammar::lbp_guard semicolon_guard(*(g.semicolon), 0);
-            PascalGrammar::behaviour_guard<PascalGrammar::RightAssociative> 
-            comma_guard(*(g.comma),
-               [&g](PNode left, PNode right) {
-               return ListVisitor<IntegerNumberNode>(left, right, &g, "integer number")
-                       .get_expression();
-               });
-
+            PascalGrammar::lbp_guard comma_lbp_guard(*(g.comma), 1);
+            PascalGrammar::list_guard<IntegerNumberNode> comma_guard(g, g.comma,
+                                                                "integer number");
             PNode labels = p.parse(0);
             g.advance(";", "expected ';' after label section");
             return std::make_shared<LabelSectionNode>(labels);

@@ -174,3 +174,11 @@ LabeledStatementNode::LabeledStatementNode(const PNode& label, const PNode& stat
 
 LabelSectionNode::LabelSectionNode(const PNode& list) : list(list) {}
 GotoStatementNode::GotoStatementNode(const PNode& label) : label(label) {}
+
+ProgramHeadingNode::ProgramHeadingNode(const std::string& name) :
+    name(name), files(std::make_shared<IdentifierListNode>()) {}
+ProgramHeadingNode::ProgramHeadingNode(const std::string& name, const PNode& files) :
+    name(name), files(files) {}
+
+ProgramNode::ProgramNode(const PNode& heading, const PNode& block) :
+    heading(heading), block(block) {}

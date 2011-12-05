@@ -1,5 +1,5 @@
 //#include "pascal_grammar.h"
-#include "ast_visitors.h"
+#include "list_guard.h"
 
 namespace pascal_grammar {
     namespace detail {
@@ -103,11 +103,8 @@ PNode parse_formal_parameter_list(PrattParser<PNode>& p, PascalGrammar& g) {
             return std::make_shared<VariableParameterNode>(id_list, param_type);
         });
 
-    PascalGrammar::behaviour_guard<RightAssociative> semicolon_guard(*(g.semicolon),
-        [&g](PNode left, PNode right) {
-            return ListVisitor<ParameterNode>(left, right, &g,
-                    "formal parameter section").get_expression();
-        });
+    PascalGrammar::list_guard<ParameterNode> semicolon_guard(g, g.semicolon, 
+                                                    "formal parameter section");
 
     PascalGrammar::behaviour_guard<LeftAssociative> colon_guard(*(g.colon), 30,
         [&g](PNode id_list, PNode param_type) -> PNode {
@@ -138,11 +135,7 @@ namespace pascal_grammar {
          .nud = [&g](PrattParser<PNode>& p) -> PNode {
               PascalGrammar::lbp_guard ob_guard(*(g.opening_bracket), 0);
               PascalGrammar::lbp_guard semicolon_lbp_guard(*(g.semicolon), 1);
-              PascalGrammar::behaviour_guard<PascalGrammar::RightAssociative> comma_guard(*(g.comma),
-                [&g](PNode left, PNode right) {
-                    return ListVisitor<IdentifierNode>(left, right, &g, "identifier")
-                           .get_expression();
-                });
+              PascalGrammar::list_guard<IdentifierNode> comma_guard(g, g.comma, "identifier");
 
               PNode name_ = p.parse(1);
               std::string name;

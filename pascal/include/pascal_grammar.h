@@ -50,10 +50,17 @@ class PascalGrammar : public grammar::Grammar<PNode> {
     PascalGrammar(PascalGrammar&&) = delete;
     PascalGrammar& operator=(const PascalGrammar&) = delete;
     PascalGrammar& operator=(PascalGrammar&&) = delete;
-    public:
-        static PNode parse(const std::string&);
-        void error(const std::string&) const;
-        void advance(const std::string&, const std::string&);
+
+public:
+    static PNode parse(const std::string&);
+    void error(const std::string&) const;
+    void advance(const std::string&, const std::string&);
+    
+    template <typename T> struct list_guard {
+        list_guard(PascalGrammar& g, Symbol<PNode>* sym, std::string desc);
+    private:
+        PascalGrammar::behaviour_guard<RightAssociative> guard;
+    }; // to use, include "list_guard.h"
 };
 
 #endif
