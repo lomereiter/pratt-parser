@@ -26,7 +26,7 @@ class Calculator : public Grammar<T> {
             Grammar<T>::add_symbol_to_dict("(number)", 0)\
             .set_scanner(
             [](const std::string& str, size_t pos) -> size_t {
-                int i = pos;
+            std::string::size_type i = pos;
                 while(i < str.length() && isdigit(str[i]))
                     ++i;
                 return i;
@@ -34,14 +34,14 @@ class Calculator : public Grammar<T> {
             .set_parser(
             [](const std::string& str, size_t beg, size_t end) -> T {
                 T num = 0;
-                for (int i = beg; i != end; ++i)
+                for (size_t i = beg; i != end; ++i)
                     num *= 10, num += str[i] - '0';
                 return num;
             });
-            infix("+", 10, add); infix("-", 10, sub);
-            infix("*", 20, mul); infix("/", 20, div);
-            prefix("+", 100, pos); prefix("-", 100, neg);
-            postfix("!", 110, fac);
+            this->infix("+", 10, add); this->infix("-", 10, sub);
+            this->infix("*", 20, mul); this->infix("/", 20, div);
+            this->prefix("+", 100, pos); this->prefix("-", 100, neg);
+            this->postfix("!", 110, fac);
             Grammar<T>::brackets("(",")", std::numeric_limits<int>::max(),[](int x){return x;});
         }
 };

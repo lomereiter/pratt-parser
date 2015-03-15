@@ -5,6 +5,7 @@
 
 #include <string>
 #include <functional>
+#include <locale>
 #include <memory>
 
 namespace token {

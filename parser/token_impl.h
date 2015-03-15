@@ -109,6 +109,6 @@ LiteralToken<T>::LiteralToken(const Symbol<T>& sym, T val, size_t start, size_t 
     Token<T>(sym, start, end), value(val) {}
 
 template <typename T>
-T LiteralToken<T>::nud(PrattParser<T>& p) const { return value; }
+T LiteralToken<T>::nud(PrattParser<T>&) const { return value; }
 
 #endif

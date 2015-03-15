@@ -13,7 +13,7 @@ namespace grammar {
 template <typename T>
 Grammar<T>::Grammar(const std::string& end_id) : symbols(end_id) {
     symbols[end_id].set_scanner(
-        [](const std::string& s, size_t pos){ return pos; }
+        [](const std::string&, size_t pos){ return pos; }
     );
 }
 
@@ -78,7 +78,7 @@ Symbol<T>& Grammar<T>::infix_r(const std::string& op, int binding_power,
 
 template <typename T>
 Symbol<T>& Grammar<T>::brackets(const std::string& ob, const std::string& cb, 
-        int binding_power, std::function<T(T)> selector=nullptr) {
+        int binding_power, std::function<T(T)> selector) {
     Symbol<T>& open_sym = add_symbol_to_dict(ob, binding_power);
     /* Symbol<T>& close_sym = */ add_symbol_to_dict(cb, 0);
     if (!selector) selector = [](T val) -> T { return val; };
@@ -211,8 +211,8 @@ Grammar<T>::set_behaviour_helper (typename Grammar<T>::Prefix,
 
 template <typename T> void 
 Grammar<T>::set_behaviour_helper (typename Grammar<T>::Postfix, 
-        Symbol<T>& sym, std::function<T(T)> f, int rbp) {
-        sym.led = [f](PrattParser<T>& p, T left) -> T {
+        Symbol<T>& sym, std::function<T(T)> f, int) {
+        sym.led = [f](PrattParser<T>&, T left) -> T {
             return f(left); }; }
 
 template <typename T> void 
